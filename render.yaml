@@ -1,0 +1,39 @@
+services:
+  # ── Backend API ────────────────────────────────────────────────────────────
+  - type: web
+    name: shuttlestats-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shuttlestats-db
+          property: connectionString
+      - key: NODE_VERSION
+        value: 24
+    healthCheckPath: /api/health
+
+  # ── Frontend Static Site ───────────────────────────────────────────────────
+  - type: web
+    name: shuttlestats-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://shuttlestats-api.onrender.com/api
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases:
+  - name: shuttlestats-db
+    plan: free

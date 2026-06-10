@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build outputs
+frontend/dist/
+
+# Environment secrets
+backend/.env
+frontend/.env.local
+
+# Database files
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/

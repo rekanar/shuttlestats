@@ -1,0 +1,254 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BADMINTON STARS — Global Theme
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --gold:        #D4AF37;
+  --gold-light:  #F5D55A;
+  --gold-dim:    #8B6914;
+  --team-a:      #0D7C7C;   /* teal – icon wings */
+  --team-a-light:#1AA8A8;
+  --team-b:      #8B1A1A;   /* crimson – icon border */
+  --team-b-light:#C42020;
+}
+
+/* ── Court Background ─────────────────────────────────────────────────────── */
+body {
+  min-height: 100vh;
+  background-image: url('/images/Court.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: #071a0d;
+}
+
+#root { min-height: 100vh; position: relative; }
+
+/* ── App Header ───────────────────────────────────────────────────────────── */
+.bs-header {
+  background: rgba(3, 8, 4, 0.92);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border-bottom: 2px solid rgba(196, 32, 32, 0.55);
+  box-shadow:
+    0 2px 32px rgba(0,0,0,0.7),
+    0 1px 0 rgba(212,175,55,0.25),
+    inset 0 -1px 0 rgba(26,168,168,0.15);
+  min-height: 80px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BRAND HEADER  — rainbow letters + orbit stars
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.bs-brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+  overflow: visible;
+  padding: 14px 4px 10px;
+}
+
+.bs-brand-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  line-height: 1;
+  position: relative;
+  z-index: 2;
+}
+
+.bs-brand-gap { width: 0.45em; }
+
+/* ── Orbiting stars around the full text block ────────────────────────── */
+.bs-star-orb {
+  position: absolute;
+  font-size: var(--sz, 11px);
+  color: var(--color, #FFD700);
+  text-shadow: 0 0 8px var(--color, #FFD700), 0 0 16px var(--color, #FFD700);
+  offset-path: ellipse(192px 44px at 50% 50%);
+  offset-rotate: 0deg;
+  offset-distance: 0%;
+  animation: bsStarOrbit var(--dur, 5s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  pointer-events: none;
+  z-index: 1;
+  line-height: 1;
+}
+@keyframes bsStarOrbit {
+  from { offset-distance:   0%; }
+  to   { offset-distance: 100%; }
+}
+
+/* ── "BADMINTON" letters — rainbow color + glow pulse ──────────────────── */
+.bs-ch-bad {
+  font-weight: 900;
+  font-size: 1.65rem;
+  letter-spacing: 0.04em;
+  display: inline-block;
+  color: var(--ch-color, #FFD700);
+  text-shadow: 0 0 10px var(--ch-color, #FFD700), 0 2px 8px rgba(0,0,0,0.6);
+  animation: bsGlow 2s ease-in-out infinite;
+}
+
+/* ── "STARZ" letters — rainbow color + glow pulse, bigger ──────────────── */
+.bs-ch-starz {
+  font-weight: 900;
+  font-size: 2rem;
+  letter-spacing: 0.08em;
+  display: inline-block;
+  color: var(--ch-color, #FFD700);
+  text-shadow: 0 0 12px var(--ch-color, #FFD700), 0 2px 10px rgba(0,0,0,0.6);
+  animation: bsGlow 2s ease-in-out infinite;
+}
+
+@keyframes bsGlow {
+  0%, 100% { filter: brightness(1);    }
+  50%       { filter: brightness(1.55); }
+}
+
+/* ── Glassmorphism Card ───────────────────────────────────────────────────── */
+.bs-card {
+  position: relative;
+  background: rgba(8, 25, 12, 0.55);
+  backdrop-filter: blur(22px) saturate(1.7) brightness(1.08);
+  -webkit-backdrop-filter: blur(22px) saturate(1.7) brightness(1.08);
+  border-radius: 1.1rem;
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 243, 180, 0.10);
+  overflow: hidden;
+}
+
+/* Gold foil top stripe */
+.bs-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--gold-dim) 10%,
+    var(--gold) 30%,
+    var(--gold-light) 50%,
+    var(--gold) 70%,
+    var(--gold-dim) 90%,
+    transparent 100%
+  );
+  z-index: 1;
+}
+
+/* ── Section headers inside cards ────────────────────────────────────────── */
+.bs-section-header {
+  background: linear-gradient(135deg, rgba(4,16,8,0.9) 0%, rgba(15,52,25,0.9) 100%);
+  color: #fff;
+  padding: 0.65rem 1rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Gold gradient button ─────────────────────────────────────────────────── */
+.bs-btn-gold {
+  background: linear-gradient(135deg, #9a7014 0%, #D4AF37 40%, #F5D55A 60%, #D4AF37 80%, #9a7014 100%);
+  color: #1a0f00;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+  box-shadow: 0 3px 12px rgba(180,130,0,0.5), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.bs-btn-gold:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+.bs-btn-gold:active:not(:disabled) { transform: translateY(0); }
+.bs-btn-gold:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Generate Tournament Schedule button — animated glow ─────────────────── */
+@keyframes bsGeneratePulse {
+  0%, 100% {
+    box-shadow:
+      0 0 10px 2px rgba(212,175,55,0.55),
+      0 0 30px 6px rgba(212,175,55,0.25),
+      0 0 60px 10px rgba(196,32,32,0.18),
+      inset 0 1px 0 rgba(255,255,255,0.4);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow:
+      0 0 18px 5px rgba(245,213,90,0.85),
+      0 0 50px 14px rgba(212,175,55,0.45),
+      0 0 90px 20px rgba(196,32,32,0.30),
+      inset 0 1px 0 rgba(255,255,255,0.5);
+    filter: brightness(1.18);
+  }
+}
+
+.bs-btn-generate {
+  background: linear-gradient(135deg,
+    #7a4f08 0%,
+    #C4900A 20%,
+    #D4AF37 40%,
+    #F5D55A 55%,
+    #D4AF37 70%,
+    #C4900A 85%,
+    #7a4f08 100%);
+  background-size: 200% 100%;
+  color: #1a0800;
+  font-weight: 900;
+  border: 2px solid rgba(245,213,90,0.7);
+  cursor: pointer;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.35);
+  transition: transform 0.12s, filter 0.12s;
+  animation: bsGeneratePulse 2.4s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+.bs-btn-generate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+  animation: bsShimmer 2.4s ease-in-out infinite;
+}
+@keyframes bsShimmer {
+  0%   { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(150%); }
+}
+.bs-btn-generate:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.01);
+  filter: brightness(1.15);
+}
+.bs-btn-generate:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+.bs-btn-generate:disabled { opacity: 0.35; cursor: not-allowed; animation: none; }
+
+/* ── Text overrides inside glass cards (Tailwind gray → light) ────────────── */
+.bs-card .text-gray-800, .bs-card .text-gray-900 { color: #f0edd6 !important; }
+.bs-card .text-gray-700  { color: #e0dcc8 !important; }
+.bs-card .text-gray-600  { color: #c8c4b0 !important; }
+.bs-card .text-gray-500  { color: #a8a494 !important; }
+.bs-card .text-gray-400  { color: #888478 !important; }
+.bs-card .bg-gray-50     { background-color: rgba(255,255,255,0.06) !important; }
+.bs-card .bg-white       { background-color: rgba(255,255,255,0.10) !important; }
+.bs-card .border-gray-100,
+.bs-card .border-gray-200 { border-color: rgba(212,175,55,0.18) !important; }
+.bs-card table thead tr  { background: rgba(4,20,8,0.75) !important; }
+.bs-card tbody tr:hover  { background: rgba(255,255,255,0.06) !important; }
+.bs-card input, .bs-card select {
+  background: rgba(255,255,255,0.12) !important;
+  color: #f0edd6 !important;
+  border-color: rgba(212,175,55,0.35) !important;
+}
+.bs-card input::placeholder { color: rgba(240,237,214,0.45) !important; }
