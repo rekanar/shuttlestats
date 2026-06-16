@@ -10,16 +10,16 @@
   --gold:        #D4AF37;
   --gold-light:  #F5D55A;
   --gold-dim:    #8B6914;
-  --team-a:      #0D7C7C;   /* teal – icon wings */
-  --team-a-light:#1AA8A8;
-  --team-b:      #8B1A1A;   /* crimson – icon border */
-  --team-b-light:#C42020;
+  --team-a:      #00BFFF;   /* electric cyan */
+  --team-a-light:#33CCFF;
+  --team-b:      #C89B00;   /* dark gold — readable on dark bg */
+  --team-b-light:#FFD700;   /* bright gold */
 }
 
 /* ── Court Background ─────────────────────────────────────────────────────── */
 body {
   min-height: 100vh;
-  background-image: url('/images/Court.png');
+  background-image: url('/images/Background_nonet.png');
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
@@ -34,11 +34,11 @@ body {
   background: rgba(3, 8, 4, 0.92);
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  border-bottom: 2px solid rgba(196, 32, 32, 0.55);
+  border-bottom: 2px solid rgba(0,191,255,0.45);
   box-shadow:
     0 2px 32px rgba(0,0,0,0.7),
     0 1px 0 rgba(212,175,55,0.25),
-    inset 0 -1px 0 rgba(26,168,168,0.15);
+    inset 0 -1px 0 rgba(0,191,255,0.20);
   min-height: 80px;
 }
 
@@ -144,6 +144,43 @@ body {
     transparent 100%
   );
   z-index: 1;
+}
+
+/* ── Tab buttons (Schedule / Stats) ──────────────────────────────────────── */
+.bs-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.15rem;
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.03em;
+  border-bottom: 3px solid transparent;
+  color: rgba(240, 237, 214, 0.55);
+  transition: color 0.2s, border-color 0.2s, text-shadow 0.2s, background 0.2s;
+}
+.bs-tab:hover { color: #f0edd6; background: rgba(255,255,255,0.04); }
+.bs-tab-active {
+  color: #FFE066;
+  border-bottom-color: #FFD700;
+  text-shadow: 0 0 14px rgba(255, 215, 0, 0.6);
+  background: linear-gradient(180deg, rgba(255,215,0,0.10), transparent);
+}
+
+/* ── Section title — bright gradient heading for in-card sections ─────────── */
+.bs-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 900;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  background: linear-gradient(90deg, #FFE066, #FFD700, #F5A623);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.25);
+  margin-bottom: 0.75rem;
 }
 
 /* ── Section headers inside cards ────────────────────────────────────────── */
@@ -252,3 +289,306 @@ body {
   border-color: rgba(212,175,55,0.35) !important;
 }
 .bs-card input::placeholder { color: rgba(240,237,214,0.45) !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE OVERRIDES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  /* Smaller brand letters on mobile */
+  .bs-ch-bad   { font-size: 1.05rem; }
+  .bs-ch-starz { font-size: 1.3rem; }
+  .bs-brand    { padding: 8px 4px 6px; }
+
+  /* Shrink orbit path to fit smaller header */
+  .bs-star-orb {
+    offset-path: ellipse(120px 28px at 50% 50%);
+  }
+
+  /* Tighter header height */
+  .bs-header { min-height: 56px; }
+
+  /* Tighter tab buttons */
+  .bs-tab-btn { padding-left: 0.75rem; padding-right: 0.75rem; font-size: 0.75rem; }
+
+  /* Touch-friendly minimum tap target */
+  button { min-height: 36px; }
+}
+
+/* ── Live / In-Progress match styles ─────────────────────────────────────── */
+
+@keyframes bsLivePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 80, 0, 0.0); }
+  50%       { box-shadow: 0 0 0 3px rgba(255, 80, 0, 0.25); }
+}
+
+.bs-live-badge {
+  background: rgba(220, 50, 0, 0.25);
+  color: #FF6030;
+  border: 1px solid rgba(255, 96, 48, 0.5);
+  animation: bsLivePulse 1.6s ease-in-out infinite;
+}
+
+.bs-live-row {
+  border-left: 3px solid rgba(255, 96, 48, 0.6) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WIN / LOSS / DRAW glow — instantly readable match outcomes
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Pill wrapper around a pair's names inside a match cell */
+.bs-pair {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  transition: box-shadow 0.25s, background 0.25s, opacity 0.25s;
+}
+
+/* Winning pair — green glow that gently pulses */
+@keyframes bsWinPulse {
+  0%, 100% { box-shadow: 0 0 12px 0 rgba(16, 200, 110, 0.45), inset 0 0 0 1px rgba(16, 200, 110, 0.55); }
+  50%       { box-shadow: 0 0 24px 4px rgba(16, 220, 120, 0.85), inset 0 0 0 1px rgba(16, 220, 120, 0.7); }
+}
+.bs-pair-win {
+  background: radial-gradient(ellipse at center, rgba(16, 200, 110, 0.22) 0%, rgba(16, 200, 110, 0.05) 100%);
+  animation: bsWinPulse 2.2s ease-in-out infinite;
+}
+
+/* Losing pair — dimmed with a red ring */
+.bs-pair-loss {
+  background: rgba(140, 24, 24, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(230, 70, 70, 0.4);
+  opacity: 0.68;
+}
+
+/* Draw — amber glow on both pairs */
+.bs-pair-draw {
+  background: radial-gradient(ellipse at center, rgba(245, 200, 80, 0.20) 0%, rgba(245, 200, 80, 0.05) 100%);
+  box-shadow: 0 0 12px 0 rgba(245, 200, 80, 0.45), inset 0 0 0 1px rgba(245, 200, 80, 0.5);
+}
+
+/* Small WON / LOST / DRAW tag under the pair name */
+.bs-outcome-tag {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1px 7px;
+  border-radius: 999px;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+.bs-tag-win  { background: rgba(16, 200, 110, 0.25); color: #4ef0a0; border: 1px solid rgba(16, 220, 120, 0.6); text-shadow: 0 0 8px rgba(16, 220, 120, 0.7); }
+.bs-tag-loss { background: rgba(220, 60, 60, 0.18);  color: #ff9090; border: 1px solid rgba(230, 70, 70, 0.45); }
+.bs-tag-draw { background: rgba(245, 200, 80, 0.20); color: #ffdf80; border: 1px solid rgba(245, 200, 80, 0.5); }
+
+/* Left-edge accent on the whole match row, by outcome */
+.bs-row-win   { border-left: 4px solid rgba(16, 220, 120, 0.85) !important; }
+.bs-row-draw  { border-left: 4px solid rgba(245, 200, 80, 0.8) !important; }
+.bs-row-np    { border-left: 4px solid rgba(140, 140, 140, 0.5) !important; }
+.bs-row-pending { border-left: 4px solid rgba(255, 220, 80, 0.35) !important; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideFromRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+/* ── History ribbon & panel ─────────────────────────────────────────────────── */
+.bs-ribbon-btn {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 14px 8px;
+  border-radius: 12px 0 0 12px;
+  border: 1px solid rgba(212,175,55,0.45);
+  border-right: none;
+  background: linear-gradient(180deg, rgba(10,28,14,0.97) 0%, rgba(20,52,26,0.97) 100%);
+  backdrop-filter: blur(16px);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.55), inset 1px 0 0 rgba(212,175,55,0.12);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  min-width: 34px;
+}
+.bs-ribbon-btn:hover {
+  background: linear-gradient(180deg, rgba(16,44,20,0.99) 0%, rgba(30,72,36,0.99) 100%);
+  box-shadow: -6px 0 30px rgba(0,0,0,0.65), 0 0 12px rgba(212,175,55,0.15);
+}
+
+.bs-history-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100dvh;
+  width: min(360px, 100vw);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: rgba(4,14,7,0.98);
+  backdrop-filter: blur(24px) saturate(1.6);
+  border-left: 1px solid rgba(212,175,55,0.35);
+  box-shadow: -8px 0 40px rgba(0,0,0,0.7);
+  animation: slideFromRight 0.22s cubic-bezier(0.22,1,0.36,1);
+}
+
+.bs-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.18s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRINT STYLES  — clean tournament schedule for paper / phone print
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media print {
+  /* ── Hide everything except the fixture schedule ── */
+  body * { visibility: hidden !important; }
+  #bs-print-area, #bs-print-area * { visibility: visible !important; }
+
+  /* Reset page */
+  @page { margin: 12mm 10mm; size: A4 portrait; }
+  body {
+    background: #fff !important;
+    background-image: none !important;
+    color: #000 !important;
+    font-size: 11pt !important;
+  }
+
+  /* Position the print area to fill the page */
+  #bs-print-area {
+    position: absolute;
+    inset: 0;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* ── Hide UI elements not relevant to print ── */
+  .bs-no-print,
+  .bs-ribbon-btn,
+  .bs-history-panel,
+  .bs-panel-backdrop,
+  .bs-live-badge,
+  button,
+  [role="tablist"] {
+    display: none !important;
+  }
+
+  /* ── Flatten glassmorphism cards to white boxes ── */
+  .bs-card {
+    background: #fff !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    border-radius: 4px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 6pt !important;
+    overflow: visible !important;
+  }
+  .bs-card::before { display: none !important; }
+
+  /* ── Section header (round headings) ── */
+  .bs-section-header {
+    background: #1a1a1a !important;
+    color: #fff !important;
+    padding: 5pt 8pt !important;
+    font-size: 10pt !important;
+    border-bottom: 1pt solid #333 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* ── Tournament name banner ── */
+  #bs-print-area > div > div:first-child {
+    background: #f5f0e0 !important;
+    border: 1pt solid #c8a000 !important;
+    color: #000 !important;
+    border-radius: 4px !important;
+    padding: 8pt 12pt !important;
+  }
+
+  /* ── All text visible in black ── */
+  * {
+    color: #000 !important;
+    text-shadow: none !important;
+    background: transparent !important;
+  }
+
+  /* ── Table cells ── */
+  td, th {
+    border: 0.5pt solid #ddd !important;
+    padding: 4pt 6pt !important;
+    font-size: 9pt !important;
+    color: #000 !important;
+    background: #fff !important;
+  }
+  th {
+    background: #f0f0f0 !important;
+    font-weight: bold !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* ── Team A / B pair names ── */
+  [style*="color: rgb(77, 212, 200)"],
+  [style*="color:#4DD4C8"],
+  [style*="color: #4DD4C8"],
+  [style*="color:#00BFFF"],
+  [style*="color: #00BFFF"] {
+    color: #006699 !important;
+    font-weight: bold !important;
+  }
+  [style*="color: rgb(255, 112, 112)"],
+  [style*="color:#FF7070"],
+  [style*="color: #FF7070"],
+  [style*="color:#FFD700"],
+  [style*="color: #FFD700"] {
+    color: #990000 !important;
+    font-weight: bold !important;
+  }
+
+  /* ── Score board — hide on print (clutters the page) ── */
+  .bs-scoreboard { display: none !important; }
+
+  /* ── Progress banner — simplify ── */
+  .bs-progress-banner { break-inside: avoid; }
+
+  /* ── Mobile card view — hide on print, show table only ── */
+  .md\:hidden { display: none !important; }
+  .hidden.md\:block { display: block !important; }
+
+  /* ── Print header — show tournament title prominently ── */
+  #bs-print-area::before {
+    content: "★ BADMINTON STARZ — Tournament Schedule";
+    display: block;
+    font-size: 16pt;
+    font-weight: 900;
+    text-align: center;
+    padding: 8pt 0 12pt;
+    border-bottom: 2pt solid #c8a000;
+    margin-bottom: 10pt;
+    color: #1a0800 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

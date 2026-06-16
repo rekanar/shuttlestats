@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, ClipboardList } from 'lucide-react';
+import { Plus, ClipboardList } from 'lucide-react';
 import type { CreateFixturePayload, ScheduleMode } from '../types';
 
 interface Props {
@@ -8,11 +8,12 @@ interface Props {
 }
 
 function TeamPanel({
-  teamName, setTeamName, players, setPlayers, label, accentColor, lightBg,
+  teamName, setTeamName, players, setPlayers, label, accentColor, lightBg, btnTextColor,
 }: {
   teamName: string; setTeamName: (v: string) => void;
   players: string[]; setPlayers: (v: string[]) => void;
   label: string; accentColor: string; lightBg: string;
+  btnTextColor: string;
 }) {
   const [input, setInput] = useState('');
 
@@ -32,17 +33,28 @@ function TeamPanel({
   }
 
   return (
-    <div className="flex-1 min-w-0 rounded-xl overflow-hidden border-2" style={{ borderColor: accentColor }}>
-      {/* Team header */}
-      <div className="px-4 py-2.5 flex items-center" style={{ background: accentColor }}>
-        <span className="text-white font-black text-sm tracking-widest uppercase">{label}</span>
+    <div className="flex-1 min-w-0 rounded-xl overflow-hidden"
+      style={{
+        border: `2px solid ${accentColor}`,
+        boxShadow: `0 0 24px ${accentColor}50, inset 0 1px 0 ${accentColor}20`,
+        background: 'rgba(4,16,8,0.80)',
+      }}>
+      {/* Team header with diagonal stripe feel */}
+      <div className="px-4 py-3 flex items-center gap-2 relative overflow-hidden"
+        style={{ background: `linear-gradient(105deg, ${accentColor}EE 0%, ${accentColor}BB 60%, ${accentColor}88 100%)` }}>
+        {/* Diagonal stripe accents */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: 'repeating-linear-gradient(60deg, transparent, transparent 10px, rgba(255,255,255,0.06) 10px, rgba(255,255,255,0.06) 14px)',
+        }} />
+        <span className="text-lg">🏸</span>
+        <span className="font-black text-base tracking-widest uppercase relative z-10" style={{ color: btnTextColor }}>{label}</span>
       </div>
       <div className="p-4">
         <div className="mb-3">
-          <label className="block text-xs font-bold mb-1 uppercase tracking-wide" style={{ color: 'rgba(240,237,214,0.7)' }}>Team Name</label>
+          <label className="block text-xs font-bold mb-1 uppercase tracking-wide" style={{ color: 'rgba(240,237,214,0.6)' }}>Team Name</label>
           <input
             className="w-full border-2 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none transition-colors"
-            style={{ borderColor: `${accentColor}44`, background: lightBg }}
+            style={{ borderColor: `${accentColor}55`, background: lightBg, color: '#f0edd6' }}
             placeholder={`e.g. ${label === 'Team A' ? 'Falcons' : 'Eagles'}`}
             value={teamName}
             onChange={e => setTeamName(e.target.value)}
@@ -52,45 +64,59 @@ function TeamPanel({
         <div className="flex gap-2 mb-2">
           <input
             className="flex-1 border-2 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors"
-            style={{ borderColor: `${accentColor}33` }}
-            placeholder="Player name"
+            style={{ borderColor: `${accentColor}55`, background: 'rgba(0,0,0,0.30)', color: '#f0edd6' }}
+            placeholder="Player name (press Enter to add)"
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addPlayer()}
           />
-          <button onClick={addPlayer}
-            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-white text-sm font-bold transition-colors hover:opacity-90"
-            style={{ background: accentColor }}>
-            <Plus size={15} /> Add
+        </div>
+
+        <div className="flex items-center gap-2 mb-3">
+          <button
+            onClick={addPlayer}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:brightness-110 active:scale-95"
+            style={{ background: accentColor, color: btnTextColor, boxShadow: `0 0 12px ${accentColor}90` }}
+          >
+            <Plus size={13} /> Add
+          </button>
+          <button
+            onClick={() => {
+              const raw = prompt('Paste player names (comma or newline separated):');
+              if (raw) pasteList(raw);
+            }}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:brightness-110 active:scale-95"
+            style={{ background: accentColor, color: btnTextColor, boxShadow: `0 0 12px ${accentColor}90` }}
+          >
+            <ClipboardList size={13} /> Paste list
           </button>
         </div>
 
-        <button
-          onClick={() => {
-            const raw = prompt('Paste player names (comma or newline separated):');
-            if (raw) pasteList(raw);
-          }}
-          className="mb-3 inline-flex items-center gap-1 text-xs font-semibold hover:underline"
-          style={{ color: accentColor }}
-        >
-          <ClipboardList size={13} /> Paste list
-        </button>
-
-        <ul className="space-y-1 max-h-52 overflow-y-auto">
-          {players.map((p, i) => (
-            <li key={i} className="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm border"
-              style={{ background: lightBg, borderColor: `${accentColor}55` }}>
-              <span className="font-semibold" style={{ color: '#f0edd6' }}>{i + 1}. {p}</span>
-              <button onClick={() => setPlayers(players.filter((_, j) => j !== i))}
-                className="text-gray-400 hover:text-red-500 transition-colors">
-                <Trash2 size={14} />
-              </button>
-            </li>
-          ))}
-        </ul>
+        {/* Player chips */}
+        {players.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2 pt-1">
+            {players.map((p, i) => (
+              <span key={i}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border"
+                style={{
+                  borderColor: accentColor,
+                  color: '#f0edd6',
+                  background: `${accentColor}22`,
+                  boxShadow: `0 0 6px ${accentColor}35`,
+                }}>
+                🏸 {p}
+                <button
+                  onClick={() => setPlayers(players.filter((_, j) => j !== i))}
+                  className="ml-0.5 text-sm leading-none hover:text-red-400 transition-colors opacity-50 hover:opacity-100">
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
 
         {players.length > 0 && (
-          <p className="text-xs mt-1 font-medium" style={{ color: accentColor }}>
+          <p className="text-xs mt-1.5 font-medium" style={{ color: accentColor }}>
             {players.length} / 20 players ✓
           </p>
         )}
@@ -100,6 +126,7 @@ function TeamPanel({
 }
 
 export default function TeamInput({ onSubmit, loading }: Props) {
+  const [tournamentName, setTournamentName] = useState('');
   const [teamAName, setTeamAName] = useState('Team A');
   const [teamBName, setTeamBName] = useState('Team B');
   const [teamAPlayers, setTeamAPlayers] = useState<string[]>([]);
@@ -111,6 +138,7 @@ export default function TeamInput({ onSubmit, loading }: Props) {
   function handleSubmit() {
     if (!canGenerate) return;
     onSubmit({
+      tournamentName,
       teamAName, teamBName, teamAPlayers, teamBPlayers,
       scheduleMode,
       courtsAvailable: 4,
@@ -126,16 +154,31 @@ export default function TeamInput({ onSubmit, loading }: Props) {
         <span>🏸</span>
       </div>
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
+        {/* Tournament Name */}
+        <div className="mb-5">
+          <label className="block text-xs font-bold mb-1 uppercase tracking-wide" style={{ color: 'rgba(240,237,214,0.7)' }}>
+            🏆 Tournament Name
+          </label>
+          <input
+            className="w-full border-2 rounded-lg px-3 py-2.5 text-sm font-semibold focus:outline-none transition-colors"
+            style={{ borderColor: 'rgba(212,175,55,0.45)', background: 'rgba(212,175,55,0.07)', color: '#f0edd6' }}
+            placeholder="e.g. Summer Tournament 2026, Winter League…"
+            value={tournamentName}
+            onChange={e => setTournamentName(e.target.value)}
+          />
+          <p className="text-xs mt-1" style={{ color: 'rgba(240,237,214,0.4)' }}>Give this tournament a memorable name to find it later in history.</p>
+        </div>
+
         {/* Team panels */}
         <div className="flex flex-col sm:flex-row gap-5 mb-6">
           <TeamPanel label="Team A"
-            accentColor="#0D7C7C" lightBg="rgba(13,124,124,0.18)"
+            accentColor="#00BFFF" lightBg="rgba(0,191,255,0.10)" btnTextColor="#001a2a"
             teamName={teamAName} setTeamName={setTeamAName}
             players={teamAPlayers} setPlayers={setTeamAPlayers} />
           <div className="w-px bg-gradient-to-b from-transparent via-amber-300 to-transparent hidden sm:block" />
           <TeamPanel label="Team B"
-            accentColor="#8B1A1A" lightBg="rgba(139,26,26,0.18)"
+            accentColor="#FFD700" lightBg="rgba(255,215,0,0.10)" btnTextColor="#1a1400"
             teamName={teamBName} setTeamName={setTeamBName}
             players={teamBPlayers} setPlayers={setTeamBPlayers} />
         </div>

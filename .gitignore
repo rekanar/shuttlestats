@@ -19,3 +19,10 @@ backend/*.db-wal
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Android build artifacts (keep source, ignore build outputs)
+frontend/android/.gradle/
+frontend/android/app/build/
+frontend/android/build/
+frontend/android/local.properties
+frontend/android/app/release/

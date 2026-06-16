@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './',   // required for Capacitor Android WebView asset loading
   plugins: [
     react(),
     VitePWA({
@@ -69,5 +70,6 @@ export default defineConfig({
   server: {
     host: true,
     port: 5175,
+    strictPort: false,  // allow fallback ports in dev — but note: each port = separate IndexedDB
   },
 })

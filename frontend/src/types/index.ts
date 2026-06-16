@@ -2,8 +2,8 @@
 
 export type ScheduleMode = 'fair_rounds' | 'full_fixture';
 export type MatchResult = 'a_win' | 'b_win' | 'draw' | 'not_played' | null;
-export type MatchStatus = 'pending' | 'completed' | 'not_played';
-export type StatusFilter = 'all' | 'pending' | 'completed';
+export type MatchStatus = 'pending' | 'in_progress' | 'completed' | 'not_played';
+export type StatusFilter = 'all' | 'pending' | 'in_progress' | 'completed';
 
 export interface PointsScheme {
   win: number;
@@ -32,6 +32,7 @@ export interface ProgressStats {
   completed: number;
   notPlayed: number;
   pending: number;
+  inProgress: number;
   pct: number;
   isFinished: boolean;
 }
@@ -45,6 +46,7 @@ export interface FixtureSummary {
 
 export interface Fixture {
   id: string;
+  tournamentName: string;
   teamAName: string;
   teamBName: string;
   teamAPlayers: string[];
@@ -129,6 +131,7 @@ export interface SearchResult {
 // ─── Form Types ──────────────────────────────────────────────────────────────
 
 export interface CreateFixturePayload {
+  tournamentName: string;
   teamAName: string;
   teamBName: string;
   teamAPlayers: string[];
@@ -137,4 +140,18 @@ export interface CreateFixturePayload {
   courtsAvailable: number;
   matchDurationMins: number;
   pointsScheme: PointsScheme;
+}
+
+// ─── Tournament History ────────────────────────────────────────────────────────
+
+export interface TournamentSummary {
+  id: string;
+  tournamentName: string;
+  teamAName: string;
+  teamBName: string;
+  createdAt: string;
+  isFinished: boolean;
+  totalMatches: number;
+  completedMatches: number;
+  pct: number;
 }

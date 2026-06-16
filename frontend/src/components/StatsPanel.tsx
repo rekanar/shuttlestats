@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { PairStats, PlayerStats, StatsResponse } from '../types';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -31,7 +31,7 @@ function WinsByPairChart({ pairStats, teamAName, teamBName }: { pairStats: PairS
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
-      <h4 className="text-sm font-semibold text-gray-700 mb-3">📊 Wins by Pair</h4>
+      <h4 className="text-sm font-bold text-amber-300 mb-3">📊 Wins by Pair</h4>
       <p className="text-xs text-gray-400 mb-2">
         <span className="inline-block w-3 h-3 rounded-sm bg-blue-500 mr-1" />{teamAName}
         <span className="inline-block w-3 h-3 rounded-sm bg-orange-400 ml-3 mr-1" />{teamBName}
@@ -65,7 +65,7 @@ function WinPctChart({ pairStats }: { pairStats: PairStats[]; teamAName: string;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
-      <h4 className="text-sm font-semibold text-gray-700 mb-1">📈 Win % by Pair</h4>
+      <h4 className="text-sm font-bold text-amber-300 mb-1">📈 Win % by Pair</h4>
       <p className="text-xs text-gray-400 mb-3">Tournament average: {avg}%</p>
       <ResponsiveContainer width="100%" height={Math.max(180, data.length * 28)}>
         <BarChart layout="vertical" data={data} margin={{ top: 4, right: 40, left: 8, bottom: 4 }}>
@@ -95,7 +95,7 @@ function TeamSharePie({ pairStats, teamAName, teamBName }: { pairStats: PairStat
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
-      <h4 className="text-sm font-semibold text-gray-700 mb-3">🥧 Team Win Share</h4>
+      <h4 className="text-sm font-bold text-amber-300 mb-3">🥧 Team Win Share</h4>
       {total === 0
         ? <p className="text-sm text-gray-400 text-center py-6">No completed matches yet.</p>
         : (
@@ -123,7 +123,7 @@ function PlayerWinPctChart({ playerStats }: { playerStats: PlayerStats[]; teamAN
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
-      <h4 className="text-sm font-semibold text-gray-700 mb-1">👤 Player Win %</h4>
+      <h4 className="text-sm font-bold text-amber-300 mb-1">👤 Player Win %</h4>
       <p className="text-xs text-gray-400 mb-3">Avg: {avg}%</p>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 4, right: 8, left: -10, bottom: 36 }}>
@@ -167,7 +167,7 @@ function PointsProgressionChart({ progression, totalRounds, teamAPlayers }: {
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
-      <h4 className="text-sm font-semibold text-gray-700 mb-1">📉 Points Progression (round by round)</h4>
+      <h4 className="text-sm font-bold text-amber-300 mb-1">📉 Points Progression (round by round)</h4>
       <p className="text-xs text-gray-400 mb-2">Click player names in legend to show/hide.</p>
       <div className="flex flex-wrap gap-1 mb-3">
         {players.map(p => (
@@ -195,44 +195,80 @@ function PointsProgressionChart({ progression, totalRounds, teamAPlayers }: {
   );
 }
 
-// ─── Player Stats Table ───────────────────────────────────────────────────────
+// ─── Player Leaderboard ───────────────────────────────────────────────────────
+// playerStats arrives already sorted by points desc, then win %.
 function PlayerStatsTable({ playerStats, teamAName, teamBName }: { playerStats: PlayerStats[]; teamAName: string; teamBName: string }) {
+  // Per-rank row background — top 3 get medal-coloured glows, top 10 a subtle tint.
+  function rowStyle(rank: number): CSSProperties {
+    if (rank === 1) return { background: 'linear-gradient(90deg, rgba(255,215,0,0.22), rgba(255,215,0,0.03))', boxShadow: 'inset 0 0 0 1px rgba(255,215,0,0.4)' };
+    if (rank === 2) return { background: 'linear-gradient(90deg, rgba(200,205,215,0.18), transparent)', boxShadow: 'inset 0 0 0 1px rgba(200,205,215,0.3)' };
+    if (rank === 3) return { background: 'linear-gradient(90deg, rgba(205,127,50,0.20), transparent)', boxShadow: 'inset 0 0 0 1px rgba(205,127,50,0.35)' };
+    if (rank <= 10) return { background: 'rgba(255,255,255,0.035)' };
+    return {};
+  }
+  const medal = (rank: number) => rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4">
-      <div className="px-4 py-3 border-b border-gray-100">
-        <h4 className="text-sm font-semibold text-gray-800">👤 Player Stats</h4>
+    <div className="rounded-xl overflow-hidden mb-5" style={{ border: '1px solid rgba(212,175,55,0.4)', background: 'rgba(6,20,10,0.65)', boxShadow: '0 6px 28px rgba(0,0,0,0.4)' }}>
+      <div className="bs-section-header" style={{ background: 'linear-gradient(135deg, #2a1e02 0%, #6b5410 55%, #2a1e02 100%)' }}>
+        <span className="text-base">🏆</span>
+        <span className="text-amber-200 font-black tracking-wide">PLAYER LEADERBOARD</span>
+        <span className="ml-auto text-[10px] font-bold text-amber-300/70 uppercase tracking-widest">Top 10 highlighted</span>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full text-xs sm:text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-100 text-gray-500">
-              <th className="px-3 py-2 text-left">Player</th>
-              <th className="px-3 py-2 text-center">Team</th>
-              <th className="px-3 py-2 text-center">P</th>
-              <th className="px-3 py-2 text-center">W</th>
-              <th className="px-3 py-2 text-center">D</th>
-              <th className="px-3 py-2 text-center">L</th>
-              <th className="px-3 py-2 text-center font-bold text-indigo-700">Pts</th>
-              <th className="px-3 py-2 text-center">Win%</th>
+            <tr className="text-amber-300/80" style={{ background: 'rgba(0,0,0,0.35)' }}>
+              <th className="px-2 py-2.5 text-center w-12">Rank</th>
+              <th className="px-3 py-2.5 text-left">Player</th>
+              <th className="px-3 py-2.5 text-center">Team</th>
+              <th className="px-2 py-2.5 text-center" title="Played">P</th>
+              <th className="px-2 py-2.5 text-center" title="Won">W</th>
+              <th className="px-2 py-2.5 text-center" title="Drawn">D</th>
+              <th className="px-2 py-2.5 text-center" title="Lost">L</th>
+              <th className="px-3 py-2.5 text-center" style={{ color: '#FFD700' }}>Pts</th>
+              <th className="px-3 py-2.5 text-center w-28">Win %</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
-            {playerStats.map(s => (
-              <tr key={s.playerName} className="hover:bg-gray-50">
-                <td className="px-3 py-2 font-medium text-gray-800">{s.playerName}</td>
-                <td className="px-3 py-2 text-center">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${s.team === 'A' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
-                    {s.team === 'A' ? teamAName : teamBName}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-center text-gray-600">{s.played}</td>
-                <td className="px-3 py-2 text-center text-green-600 font-medium">{s.won}</td>
-                <td className="px-3 py-2 text-center text-gray-500">{s.drawn}</td>
-                <td className="px-3 py-2 text-center text-red-400">{s.lost}</td>
-                <td className="px-3 py-2 text-center font-bold text-indigo-700">{s.points}</td>
-                <td className="px-3 py-2 text-center font-semibold text-gray-700">{s.winPct}%</td>
-              </tr>
-            ))}
+          <tbody>
+            {playerStats.map((s, i) => {
+              const rank = i + 1;
+              const top3 = rank <= 3;
+              const teamColor = s.team === 'A' ? '#00BFFF' : '#FFD700';
+              return (
+                <tr key={s.playerName} style={rowStyle(rank)} className="border-b border-white/5 transition-colors hover:bg-white/[0.06]">
+                  <td className="px-2 py-2.5 text-center font-black">
+                    {medal(rank) ?? <span className="text-amber-200/50">{rank}</span>}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <span className={`font-bold ${top3 ? 'text-base' : ''}`} style={{ color: top3 ? '#fff7dc' : '#f0edd6' }}>
+                      {s.playerName}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 text-center">
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold"
+                      style={{ background: `${teamColor}22`, color: teamColor, border: `1px solid ${teamColor}66` }}>
+                      {s.team === 'A' ? teamAName : teamBName}
+                    </span>
+                  </td>
+                  <td className="px-2 py-2.5 text-center text-amber-100/70">{s.played}</td>
+                  <td className="px-2 py-2.5 text-center font-bold text-emerald-400">{s.won}</td>
+                  <td className="px-2 py-2.5 text-center text-amber-200/50">{s.drawn}</td>
+                  <td className="px-2 py-2.5 text-center text-red-400/80">{s.lost}</td>
+                  <td className="px-3 py-2.5 text-center font-black text-base" style={{ color: '#FFD700', textShadow: top3 ? '0 0 10px rgba(255,215,0,0.5)' : 'none' }}>
+                    {s.points}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                        <div className="h-full rounded-full" style={{ width: `${s.winPct}%`, background: 'linear-gradient(90deg,#10c86e,#4ef0a0)' }} />
+                      </div>
+                      <span className="font-bold text-emerald-300 w-11 text-right">{s.winPct}%</span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -260,6 +296,11 @@ export default function StatsPanel({ stats, teamAName, teamBName, totalRounds }:
 
   return (
     <div>
+      {/* Player leaderboard first — most important at a glance */}
+      <PlayerStatsTable playerStats={playerStats} teamAName={teamAName} teamBName={teamBName} />
+
+      {/* Charts & trends below */}
+      <h3 className="bs-title"><span>📊</span> Charts &amp; Trends</h3>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div>
           <WinsByPairChart pairStats={pairStats} teamAName={teamAName} teamBName={teamBName} />
@@ -271,7 +312,6 @@ export default function StatsPanel({ stats, teamAName, teamBName, totalRounds }:
         </div>
       </div>
       <PointsProgressionChart progression={progression} totalRounds={totalRounds} teamAPlayers={teamAPlayers} teamBPlayers={teamBPlayers} />
-      <PlayerStatsTable playerStats={playerStats} teamAName={teamAName} teamBName={teamBName} />
     </div>
   );
 }
