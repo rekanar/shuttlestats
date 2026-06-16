@@ -36,7 +36,8 @@ export function computePairStats(matches: FlatMatch[], pts: { win: number; draw:
   }
   return Array.from(map.values())
     .map(s => ({ ...s, winPct: s.played > 0 ? +((s.won / s.played) * 100).toFixed(1) : 0 }))
-    .sort((a: any, b: any) => b.points - a.points || b.winPct - a.winPct || b.played - a.played);
+    // Rank by WIN % first (most wins-relative), then wins, then matches played, then points.
+    .sort((a: any, b: any) => b.winPct - a.winPct || b.won - a.won || b.played - a.played || b.points - a.points);
 }
 
 export function computePlayerStats(matches: FlatMatch[], pts: { win: number; draw: number; loss: number }) {
@@ -65,7 +66,8 @@ export function computePlayerStats(matches: FlatMatch[], pts: { win: number; dra
   }
   return Array.from(map.values())
     .map(s => ({ ...s, winPct: s.played > 0 ? +((s.won / s.played) * 100).toFixed(1) : 0 }))
-    .sort((a: any, b: any) => b.points - a.points || b.winPct - a.winPct);
+    // Rank by WIN % first, then wins, then matches played, then points.
+    .sort((a: any, b: any) => b.winPct - a.winPct || b.won - a.won || b.played - a.played || b.points - a.points);
 }
 
 export function computeProgress(matches: FlatMatch[], isFinished: boolean | number) {

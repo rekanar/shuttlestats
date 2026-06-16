@@ -149,9 +149,11 @@ High value, self-contained, build cleanly on what exists:
 
 ## ✅ Recently shipped
 
+- **Manual knockout championships** — a **separate screen** (`/championships`) with its own `championships` Firestore collection (existing fixtures untouched). One generic single-elimination bracket covers all 5 categories (Men's/Women's Singles, Men's/Women's/Mixed Doubles) via side size 1/2; draw sizes 4/8/16/32; admin types player names manually at every round (R32→Final); auto champion banner. Admin-gated (read-only for viewers). Files: `pages/Championships.tsx`, `components/BracketView.tsx`, `components/CreateChampionship.tsx`, `api/championshipsApi.ts`, `services/bracketAlgorithm.ts`, `types/championship.ts`.
+- **Team-vs-Team ranking by win %** — pair & player leaderboards now sort by win percentage first (then wins, matches, points), so the highest-win-% player is ranked/highlighted at the top.
 - **Admin role + public read-only dashboard** — Firebase Auth + Firestore Security Rules. Anyone can view; only a signed-in admin can create/edit/score/delete/finish. Server-side enforced via `frontend/firestore.rules`. (Addresses the wider BRD's RBAC intent — see Section 10 role matrix.)
 - CSV/Excel export of the full **schedule** (FR9.17), combined **stats** (FR9.36), and a tournament-day **Pending Matches checklist** (FR9.47) — `frontend/src/services/exportService.ts`, no new dependencies.
 
 ## 🚧 In progress / next
 
-- **Manual knockout championships** — Men's/Women's Singles, Men's/Women's/Mixed Doubles. One generic single-elimination bracket (R32→Final) parameterized by side size (1 or 2) + gender rule; admin enters names manually at every round; a "Championship" (e.g. Indian Open) can hold all five event brackets. *(Design agreed; build pending.)*
+- _(Championships shipped — see above.)_ Possible follow-ups: gender validation for Mixed Doubles, optional auto-advance of winners, per-round score sheets / PDF export for brackets, public share link for a championship.

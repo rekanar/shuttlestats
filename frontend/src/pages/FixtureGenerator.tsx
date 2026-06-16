@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fixturesApi } from '../api/fixturesApi';
+import { championshipsApi } from '../api/championshipsApi';
+import type { ChampionshipSummary } from '../types/championship';
 import TeamInput from '../components/TeamInput';
 import ProgressBanner from '../components/ProgressBanner';
 import AllMatchesList from '../components/AllMatchesList';
@@ -12,10 +15,10 @@ import LoginModal from '../components/LoginModal';
 import type {
   Fixture, CreateFixturePayload, MatchResult, StatsResponse, StatusFilter, TournamentSummary,
 } from '../types';
-import { BarChart2, Calendar, ArrowLeft, Search, Trophy, X, Download, Upload, CloudUpload, CheckCircle2, Printer, Trash2, FileSpreadsheet, ClipboardList, ShieldCheck, LogOut, Lock, Eye } from 'lucide-react';
+import { BarChart2, Calendar, ArrowLeft, Search, Trophy, X, Download, Upload, CloudUpload, CheckCircle2, Printer, Trash2, FileSpreadsheet, ClipboardList, ShieldCheck, LogOut, Lock, Plus, ChevronRight } from 'lucide-react';
 
 type Tab = 'schedule' | 'stats';
-type View = 'home' | 'fixture';
+type View = 'home' | 'create' | 'fixture';
 
 // ─── BADMINTON STARZ Header ───────────────────────────────────────────────────
 
@@ -251,9 +254,11 @@ function BadmintonScene() { return null; }
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function FixtureGenerator() {
   const { isAdmin, loading: authLoading, user, logout, isDev, devAdmin, setDevAdmin } = useAuth();
+  const navigate = useNavigate();
   const [loginOpen, setLoginOpen] = useState(false);
   const [view, setView] = useState<View>('home');
   const [tournaments, setTournaments] = useState<TournamentSummary[]>([]);
+  const [championships, setChampionships] = useState<ChampionshipSummary[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
   const [fixture, setFixture] = useState<Fixture | null>(null);
@@ -275,8 +280,10 @@ export default function FixtureGenerator() {
 
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
-    try { setTournaments(await fixturesApi.list()); } catch { /* silent */ }
-    finally { setHistoryLoading(false); }
+    const [t, c] = await Promise.allSettled([fixturesApi.list(), championshipsApi.list()]);
+    if (t.status === 'fulfilled') setTournaments(t.value);
+    if (c.status === 'fulfilled') setChampionships(c.value);
+    setHistoryLoading(false);
   }, []);
 
   // Load history on first mount
@@ -543,6 +550,19 @@ export default function FixtureGenerator() {
   const pendingCount = fixture?.rounds.flatMap(r => r.matches).filter(m => m.status === 'pending').length ?? 0;
   const allDone = fixture ? fixture.progress.pct === 100 : false;
 
+  // Unified dashboard list — championships + round-robin fixtures, newest first.
+  const dashItems = [
+    ...championships.map(c => ({
+      kind: 'championship' as const, id: c.id, name: c.name, createdAt: c.createdAt,
+      sub: `${c.eventCount} event${c.eventCount !== 1 ? 's' : ''}`,
+    })),
+    ...tournaments.map(t => ({
+      kind: 'fixture' as const, id: t.id, name: t.tournamentName, createdAt: t.createdAt,
+      sub: `${t.teamAName} vs ${t.teamBName}`,
+      pct: t.pct, isFinished: t.isFinished, completedMatches: t.completedMatches, totalMatches: t.totalMatches,
+    })),
+  ].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+
   return (
     <div className="min-h-screen relative">
       <BadmintonScene />
@@ -553,30 +573,6 @@ export default function FixtureGenerator() {
           <div className="absolute left-1/2 -translate-x-1/2">
             <BrandLogo />
           </div>
-
-          {/* Admin auth control (home view) */}
-          {view === 'home' && !authLoading && (
-            <div className="bs-no-print absolute left-2 sm:left-4 z-10 flex items-center gap-2">
-              {isAdmin ? (
-                <>
-                  <span className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold"
-                    style={{ background: 'rgba(212,175,55,0.15)', color: '#FFE066', border: '1px solid rgba(212,175,55,0.4)' }}
-                    title={user?.email ?? 'Admin'}>
-                    <ShieldCheck size={12} /> Admin
-                  </span>
-                  <button onClick={logout}
-                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-amber-800/40 text-xs text-amber-300/80 hover:bg-white/5 transition-colors">
-                    <LogOut size={12} /> <span className="hidden sm:inline">Sign out</span>
-                  </button>
-                </>
-              ) : (
-                <button onClick={() => setLoginOpen(true)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-amber-800/40 text-xs text-amber-300/80 hover:bg-white/5 transition-colors">
-                  <Lock size={12} /> <span className="hidden sm:inline">Admin sign in</span>
-                </button>
-              )}
-            </div>
-          )}
 
           {view === 'fixture' && (
             <button
@@ -610,73 +606,123 @@ export default function FixtureGenerator() {
           <div className="mb-4 p-3 bg-red-900/80 border border-red-600/50 rounded-lg text-sm text-red-200">{error}</div>
         )}
 
-        {/* ── VIEW: Home — Admin (create form) ───────────────────────────── */}
-        {view === 'home' && isAdmin && (
-          <div className="max-w-4xl mx-auto">
-            {/* Divider */}
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex-1 h-px" style={{ background: 'rgba(212,175,55,0.2)' }} />
-              <span className="text-xs font-bold text-amber-300/50 uppercase tracking-widest">New Tournament</span>
-              <div className="flex-1 h-px" style={{ background: 'rgba(212,175,55,0.2)' }} />
-            </div>
-
-            {/* Create form */}
-            <div className="bs-card">
-              <TeamInput onSubmit={handleCreate} loading={loading} />
-            </div>
-
-            {/* Backup / Restore footer */}
-            <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
-              <span className="text-xs text-amber-200/30">Data backup:</span>
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-800/30 text-xs text-amber-300/60 hover:text-amber-300 hover:border-amber-600/50 hover:bg-white/5 transition-colors"
-              >
-                <Download size={12} /> Export backup
-              </button>
-              <button
-                onClick={handleImport}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-800/30 text-xs text-amber-300/60 hover:text-amber-300 hover:border-amber-600/50 hover:bg-white/5 transition-colors"
-              >
-                <Upload size={12} /> Restore from backup
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── VIEW: Home — auth loading ──────────────────────────────────── */}
-        {view === 'home' && authLoading && (
-          <p className="text-center text-amber-200/40 py-16">Loading…</p>
-        )}
-
-        {/* ── VIEW: Home — Viewer (read-only dashboard) ──────────────────── */}
-        {view === 'home' && !isAdmin && !authLoading && (
+        {/* ── VIEW: Home — Unified Dashboard ─────────────────────────────── */}
+        {view === 'home' && (
           <div className="max-w-3xl mx-auto">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex-1 h-px" style={{ background: 'rgba(212,175,55,0.2)' }} />
-              <span className="flex items-center gap-1.5 text-xs font-bold text-amber-300/50 uppercase tracking-widest">
-                <Eye size={12} /> Live Tournaments
-              </span>
-              <div className="flex-1 h-px" style={{ background: 'rgba(212,175,55,0.2)' }} />
-            </div>
-
+            {/* Admin auth control — centered below the banner (no overlap) */}
             {!authLoading && (
-              <div className="bs-card px-4 py-3 mb-4 flex items-center gap-2 text-xs text-amber-200/60">
-                <ShieldCheck size={14} className="text-amber-400 shrink-0" />
-                You're viewing in read-only mode. Tap a tournament to see the schedule and live stats.
-                <button onClick={() => setLoginOpen(true)} className="ml-auto shrink-0 flex items-center gap-1 text-amber-300 hover:text-amber-200 underline underline-offset-2">
-                  <Lock size={11} /> Admin sign in
+              <div className="flex justify-center mb-6">
+                {isAdmin ? (
+                  <div className="bs-card flex items-center gap-3 px-4 py-2.5">
+                    <span className="flex items-center gap-1.5 text-sm font-bold" style={{ color: '#FFE066' }}>
+                      <ShieldCheck size={15} className="text-amber-400" /> Admin
+                    </span>
+                    {user?.email && <span className="hidden sm:inline text-xs text-amber-200/40">{user.email}</span>}
+                    <button onClick={logout}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-800/40 text-xs text-amber-300/80 hover:bg-white/5 transition-colors">
+                      <LogOut size={12} /> Sign out
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => setLoginOpen(true)}
+                    className="bs-card flex items-center gap-2 px-5 py-2.5 text-sm font-bold hover:scale-[1.02] transition-transform"
+                    style={{ color: '#FFE066' }}>
+                    <Lock size={14} className="text-amber-400" /> Admin sign in
+                    <span className="hidden sm:inline text-xs font-normal text-amber-200/40">· everyone else is read-only</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Admin: create actions */}
+            {isAdmin && (
+              <div className="flex flex-wrap justify-center gap-3 mb-6">
+                <button onClick={() => setView('create')} className="bs-btn-gold flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm">
+                  <Plus size={15} /> New Round-Robin Fixture
+                </button>
+                <button onClick={() => navigate('/championships?create=1')} className="bs-btn-gold flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm">
+                  <Trophy size={15} /> New Championship
                 </button>
               </div>
             )}
 
-            <div className="bs-card p-3">
-              <TournamentHistory
-                tournaments={tournaments}
-                loading={historyLoading}
-                onOpen={handleOpenTournament}
-                panelMode
-              />
+            {/* Divider */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-1 h-px" style={{ background: 'rgba(212,175,55,0.2)' }} />
+              <span className="text-xs font-bold text-amber-300/60 uppercase tracking-widest">Select a tournament to view</span>
+              <div className="flex-1 h-px" style={{ background: 'rgba(212,175,55,0.2)' }} />
+            </div>
+
+            {/* Combined list — championships + round-robin fixtures */}
+            {historyLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => <div key={i} className="rounded-xl animate-pulse" style={{ background: 'rgba(255,255,255,0.06)', height: '72px' }} />)}
+              </div>
+            ) : dashItems.length === 0 ? (
+              <div className="text-center py-12 rounded-xl border border-dashed border-amber-900/30" style={{ background: 'rgba(8,25,12,0.35)' }}>
+                <Trophy size={26} className="text-amber-400/30 mx-auto mb-2" />
+                <p className="text-sm text-amber-200/40">Nothing here yet.</p>
+                {isAdmin
+                  ? <p className="text-xs text-amber-200/25 mt-1">Create a round-robin fixture or a championship above.</p>
+                  : <p className="text-xs text-amber-200/25 mt-1">An admin can create tournaments.</p>}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {dashItems.map(item => item.kind === 'fixture' ? (
+                  <button key={'f' + item.id} onClick={() => handleOpenTournament(item.id)}
+                    className="w-full bs-card flex items-center gap-3 px-4 py-3 text-left hover:scale-[1.01] transition-transform">
+                    <span className="shrink-0 text-[10px] font-black px-2 py-1 rounded-md" style={{ background: 'rgba(0,191,255,0.15)', color: '#7FE0FF', border: '1px solid rgba(0,191,255,0.4)' }}>
+                      ROUND ROBIN
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-black text-sm truncate" style={{ color: '#f0edd6' }}>{item.name}</div>
+                      <div className="text-[11px] text-amber-200/45 truncate">{item.sub} · {item.completedMatches}/{item.totalMatches} matches · {item.pct}%</div>
+                    </div>
+                    <span className="hidden sm:inline shrink-0 text-[10px] font-bold" style={{ color: item.isFinished ? '#FFD700' : '#00BFFF' }}>
+                      {item.isFinished ? '🏆 Finished' : item.completedMatches === 0 ? '🆕 New' : '⏳ Ongoing'}
+                    </span>
+                    <ChevronRight size={16} className="text-amber-400/40 shrink-0" />
+                  </button>
+                ) : (
+                  <button key={'c' + item.id} onClick={() => navigate('/championships?open=' + item.id)}
+                    className="w-full bs-card flex items-center gap-3 px-4 py-3 text-left hover:scale-[1.01] transition-transform">
+                    <span className="shrink-0 text-[10px] font-black px-2 py-1 rounded-md" style={{ background: 'rgba(255,215,0,0.15)', color: '#FFE066', border: '1px solid rgba(255,215,0,0.4)' }}>
+                      CHAMPIONSHIP
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-black text-sm truncate" style={{ color: '#f0edd6' }}>{item.name}</div>
+                      <div className="text-[11px] text-amber-200/45 truncate">{item.sub}</div>
+                    </div>
+                    <Trophy size={15} className="text-amber-400 shrink-0" />
+                    <ChevronRight size={16} className="text-amber-400/40 shrink-0" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Admin backup footer */}
+            {isAdmin && (
+              <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
+                <span className="text-xs text-amber-200/30">Data backup:</span>
+                <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-800/30 text-xs text-amber-300/60 hover:text-amber-300 hover:border-amber-600/50 hover:bg-white/5 transition-colors">
+                  <Download size={12} /> Export backup
+                </button>
+                <button onClick={handleImport} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-800/30 text-xs text-amber-300/60 hover:text-amber-300 hover:border-amber-600/50 hover:bg-white/5 transition-colors">
+                  <Upload size={12} /> Restore from backup
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── VIEW: Create (admin) — Round-Robin fixture form ────────────── */}
+        {view === 'create' && isAdmin && (
+          <div className="max-w-4xl mx-auto">
+            <button onClick={() => setView('home')} className="mb-3 flex items-center gap-1 text-xs text-amber-300/70 hover:text-amber-200">
+              <ArrowLeft size={13} /> Dashboard
+            </button>
+            <div className="bs-card">
+              <TeamInput onSubmit={handleCreate} loading={loading} />
             </div>
           </div>
         )}

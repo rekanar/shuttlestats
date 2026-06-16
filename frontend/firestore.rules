@@ -28,6 +28,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Championships (manual knockouts): anyone may read; only admins may write.
+    match /championships/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Admin registry. A signed-in user may read ONLY their own admin doc (so the
     // app can learn their role). No client may write — manage admins from the
     // Firebase console or the Admin SDK.
