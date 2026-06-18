@@ -6,13 +6,12 @@ import {
   LineChart, Line, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 
-const COLORS_A = '#3B82F6';
-const COLORS_B = '#F97316';
-
 interface Props {
   stats: StatsResponse;
   teamAName: string;
   teamBName: string;
+  teamAColor: string;
+  teamBColor: string;
   totalRounds: number;
 }
 
@@ -21,20 +20,20 @@ function truncate(name: string, max = 12) {
 }
 
 // ─── Wins by Pair Bar Chart ───────────────────────────────────────────────────
-function WinsByPairChart({ pairStats, teamAName, teamBName }: { pairStats: PairStats[]; teamAName: string; teamBName: string }) {
+function WinsByPairChart({ pairStats, teamAName, teamBName, colorA, colorB }: { pairStats: PairStats[]; teamAName: string; teamBName: string; colorA: string; colorB: string }) {
   const data = pairStats.map(s => ({
     name: truncate(`${s.players[0]} & ${s.players[1]}`),
     wins: s.won,
     team: s.team,
-    fill: s.team === 'A' ? COLORS_A : COLORS_B,
+    fill: s.team === 'A' ? colorA : colorB,
   }));
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
       <h4 className="text-sm font-bold text-amber-300 mb-3">📊 Wins by Pair</h4>
       <p className="text-xs text-gray-400 mb-2">
-        <span className="inline-block w-3 h-3 rounded-sm bg-blue-500 mr-1" />{teamAName}
-        <span className="inline-block w-3 h-3 rounded-sm bg-orange-400 ml-3 mr-1" />{teamBName}
+        <span className="inline-block w-3 h-3 rounded-sm mr-1" style={{ background: colorA }} />{teamAName}
+        <span className="inline-block w-3 h-3 rounded-sm ml-3 mr-1" style={{ background: colorB }} />{teamBName}
       </p>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 4, right: 8, left: -10, bottom: 40 }}>
@@ -52,7 +51,7 @@ function WinsByPairChart({ pairStats, teamAName, teamBName }: { pairStats: PairS
 }
 
 // ─── Win % Horizontal Bar ─────────────────────────────────────────────────────
-function WinPctChart({ pairStats }: { pairStats: PairStats[]; teamAName: string; teamBName: string }) {
+function WinPctChart({ pairStats, colorA, colorB }: { pairStats: PairStats[]; colorA: string; colorB: string }) {
   const sorted = [...pairStats].sort((a, b) => b.winPct - a.winPct);
   const avg = pairStats.length
     ? +(pairStats.reduce((s, p) => s + p.winPct, 0) / pairStats.length).toFixed(1)
@@ -60,7 +59,7 @@ function WinPctChart({ pairStats }: { pairStats: PairStats[]; teamAName: string;
   const data = sorted.map(s => ({
     name: truncate(`${s.players[0]} & ${s.players[1]}`),
     winPct: s.winPct,
-    fill: s.team === 'A' ? COLORS_A : COLORS_B,
+    fill: s.team === 'A' ? colorA : colorB,
   }));
 
   return (
@@ -84,7 +83,7 @@ function WinPctChart({ pairStats }: { pairStats: PairStats[]; teamAName: string;
 }
 
 // ─── Team Win Share Pie ───────────────────────────────────────────────────────
-function TeamSharePie({ pairStats, teamAName, teamBName }: { pairStats: PairStats[]; teamAName: string; teamBName: string }) {
+function TeamSharePie({ pairStats, teamAName, teamBName, colorA, colorB }: { pairStats: PairStats[]; teamAName: string; teamBName: string; colorA: string; colorB: string }) {
   const aWins = pairStats.filter(s => s.team === 'A').reduce((sum, s) => sum + s.won, 0);
   const bWins = pairStats.filter(s => s.team === 'B').reduce((sum, s) => sum + s.won, 0);
   const total = aWins + bWins;
@@ -103,8 +102,8 @@ function TeamSharePie({ pairStats, teamAName, teamBName }: { pairStats: PairStat
             <PieChart>
               <Pie data={data} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, value }) => `${name}: ${value} (${total ? Math.round(value / total * 100) : 0}%)`}
                 labelLine={false} fontSize={11}>
-                <Cell fill={COLORS_A} />
-                <Cell fill={COLORS_B} />
+                <Cell fill={colorA} />
+                <Cell fill={colorB} />
               </Pie>
               <Tooltip formatter={(v: number) => [`${v} wins`, '']} />
             </PieChart>
@@ -115,10 +114,10 @@ function TeamSharePie({ pairStats, teamAName, teamBName }: { pairStats: PairStat
 }
 
 // ─── Player Win % Bar ─────────────────────────────────────────────────────────
-function PlayerWinPctChart({ playerStats }: { playerStats: PlayerStats[]; teamAName: string; teamBName: string }) {
+function PlayerWinPctChart({ playerStats, colorA, colorB }: { playerStats: PlayerStats[]; colorA: string; colorB: string }) {
   const data = [...playerStats]
     .sort((a, b) => b.winPct - a.winPct)
-    .map(s => ({ name: truncate(s.playerName, 10), winPct: s.winPct, team: s.team, fill: s.team === 'A' ? COLORS_A : COLORS_B }));
+    .map(s => ({ name: truncate(s.playerName, 10), winPct: s.winPct, team: s.team, fill: s.team === 'A' ? colorA : colorB }));
   const avg = data.length ? +(data.reduce((s, d) => s + d.winPct, 0) / data.length).toFixed(1) : 0;
 
   return (
@@ -142,11 +141,12 @@ function PlayerWinPctChart({ playerStats }: { playerStats: PlayerStats[]; teamAN
 }
 
 // ─── Points Progression Line Chart ───────────────────────────────────────────
-function PointsProgressionChart({ progression, totalRounds, teamAPlayers }: {
+function PointsProgressionChart({ progression, totalRounds, teamAPlayers, colorA, colorB }: {
   progression: Record<string, number[]>; totalRounds: number;
-  teamAPlayers: string[]; teamBPlayers: string[];
+  teamAPlayers: string[]; colorA: string; colorB: string;
 }) {
   const players = Object.keys(progression);
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
   if (!players.length) return null;
 
   const chartData = Array.from({ length: totalRounds }, (_, r) => {
@@ -157,8 +157,7 @@ function PointsProgressionChart({ progression, totalRounds, teamAPlayers }: {
     return point;
   });
 
-  const colorScale = (name: string) => teamAPlayers.includes(name) ? COLORS_A : COLORS_B;
-  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const colorScale = (name: string) => teamAPlayers.includes(name) ? colorA : colorB;
   const toggle = (name: string) => setHidden(prev => {
     const next = new Set(prev);
     next.has(name) ? next.delete(name) : next.add(name);
@@ -197,7 +196,7 @@ function PointsProgressionChart({ progression, totalRounds, teamAPlayers }: {
 
 // ─── Player Leaderboard ───────────────────────────────────────────────────────
 // playerStats arrives already sorted by points desc, then win %.
-function PlayerStatsTable({ playerStats, teamAName, teamBName }: { playerStats: PlayerStats[]; teamAName: string; teamBName: string }) {
+function PlayerStatsTable({ playerStats, teamAName, teamBName, colorA, colorB }: { playerStats: PlayerStats[]; teamAName: string; teamBName: string; colorA: string; colorB: string }) {
   // Per-rank row background — top 3 get medal-coloured glows, top 10 a subtle tint.
   function rowStyle(rank: number): CSSProperties {
     if (rank === 1) return { background: 'linear-gradient(90deg, rgba(255,215,0,0.22), rgba(255,215,0,0.03))', boxShadow: 'inset 0 0 0 1px rgba(255,215,0,0.4)' };
@@ -234,7 +233,7 @@ function PlayerStatsTable({ playerStats, teamAName, teamBName }: { playerStats: 
             {playerStats.map((s, i) => {
               const rank = i + 1;
               const top3 = rank <= 3;
-              const teamColor = s.team === 'A' ? '#00BFFF' : '#FFD700';
+              const teamColor = s.team === 'A' ? colorA : colorB;
               return (
                 <tr key={s.playerName} style={rowStyle(rank)} className="border-b border-white/5 transition-colors hover:bg-white/[0.06]">
                   <td className="px-2 py-2.5 text-center font-black">
@@ -278,10 +277,9 @@ function PlayerStatsTable({ playerStats, teamAName, teamBName }: { playerStats: 
 
 // ─── Main StatsPanel ──────────────────────────────────────────────────────────
 
-export default function StatsPanel({ stats, teamAName, teamBName, totalRounds }: Props) {
+export default function StatsPanel({ stats, teamAName, teamBName, teamAColor, teamBColor, totalRounds }: Props) {
   const { pairStats, playerStats, progression } = stats;
   const teamAPlayers = playerStats.filter(s => s.team === 'A').map(s => s.playerName);
-  const teamBPlayers = playerStats.filter(s => s.team === 'B').map(s => s.playerName);
 
   const hasData = pairStats.some(s => s.played > 0);
 
@@ -297,21 +295,21 @@ export default function StatsPanel({ stats, teamAName, teamBName, totalRounds }:
   return (
     <div>
       {/* Player leaderboard first — most important at a glance */}
-      <PlayerStatsTable playerStats={playerStats} teamAName={teamAName} teamBName={teamBName} />
+      <PlayerStatsTable playerStats={playerStats} teamAName={teamAName} teamBName={teamBName} colorA={teamAColor} colorB={teamBColor} />
 
       {/* Charts & trends below */}
       <h3 className="bs-title"><span>📊</span> Charts &amp; Trends</h3>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div>
-          <WinsByPairChart pairStats={pairStats} teamAName={teamAName} teamBName={teamBName} />
-          <WinPctChart pairStats={pairStats} teamAName={teamAName} teamBName={teamBName} />
+          <WinsByPairChart pairStats={pairStats} teamAName={teamAName} teamBName={teamBName} colorA={teamAColor} colorB={teamBColor} />
+          <WinPctChart pairStats={pairStats} colorA={teamAColor} colorB={teamBColor} />
         </div>
         <div>
-          <TeamSharePie pairStats={pairStats} teamAName={teamAName} teamBName={teamBName} />
-          <PlayerWinPctChart playerStats={playerStats} teamAName={teamAName} teamBName={teamBName} />
+          <TeamSharePie pairStats={pairStats} teamAName={teamAName} teamBName={teamBName} colorA={teamAColor} colorB={teamBColor} />
+          <PlayerWinPctChart playerStats={playerStats} colorA={teamAColor} colorB={teamBColor} />
         </div>
       </div>
-      <PointsProgressionChart progression={progression} totalRounds={totalRounds} teamAPlayers={teamAPlayers} teamBPlayers={teamBPlayers} />
+      <PointsProgressionChart progression={progression} totalRounds={totalRounds} teamAPlayers={teamAPlayers} colorA={teamAColor} colorB={teamBColor} />
     </div>
   );
 }

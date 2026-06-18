@@ -6,12 +6,12 @@
 
 import {
   collection, doc,
-  getDoc, getDocs, setDoc, updateDoc, deleteDoc,
+  getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot,
   query, where, orderBy,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { v4 as uuidv4 } from 'uuid';
-import type { Fixture, CreateFixturePayload, MatchResult, StatsResponse, TournamentSummary } from '../types';
+import type { Fixture, CreateFixturePayload, MatchResult, StatsResponse, TournamentSummary, ProgressStats } from '../types';
 import { generateFairRoundsFixture, generateFullFixture, getFixtureSummary } from '../services/fixtureAlgorithm';
 import {
   computePairStats, computePlayerStats, computeProgress,
@@ -56,6 +56,8 @@ function serializeFixture(data: any, matches: FlatMatch[]): Fixture {
     tournamentName: data.tournament_name || `${data.team_a_name} vs ${data.team_b_name}`,
     teamAName: data.team_a_name,
     teamBName: data.team_b_name,
+    teamAColor: data.team_a_color || '#22D3EE',
+    teamBColor: data.team_b_color || '#FBBF24',
     teamAPlayers: data.team_a_players,
     teamBPlayers: data.team_b_players,
     scheduleMode: data.schedule_mode,
@@ -70,6 +72,33 @@ function serializeFixture(data: any, matches: FlatMatch[]): Fixture {
     summary: getFixtureSummary(data.team_a_players, data.team_b_players, rounds),
     progress,
   };
+}
+
+// ─── Stats builders (pure — no network) ──────────────────────────────────────
+// Build the full StatsResponse from a raw fixture doc + its match docs.
+function buildStats(f: any, matches: FlatMatch[]): StatsResponse {
+  const pts = { win: f.points_win, draw: f.points_draw, loss: f.points_loss };
+  const rounds = buildRounds(matches);
+  return {
+    pairStats: computePairStats(matches, pts),
+    playerStats: computePlayerStats(matches, { win: 10, draw: 5, loss: 0 }),
+    progress: computeProgress(matches, f.is_finished),
+    progression: computePointsProgression(matches, pts, rounds.length),
+    teamStats: computeTeamStats(matches),
+  };
+}
+
+// Flatten an in-memory Fixture back into FlatMatch[] (for instant local stats).
+function flattenFixture(fixture: Fixture): FlatMatch[] {
+  return fixture.rounds.flatMap(r =>
+    r.matches.map(m => ({
+      id: m.id, fixture_id: fixture.id,
+      round_number: r.roundNumber, court: m.court,
+      team_a_player1: m.teamAPair[0], team_a_player2: m.teamAPair[1],
+      team_b_player1: m.teamBPair[0], team_b_player2: m.teamBPair[1],
+      result: m.result, score_a: m.scoreA, score_b: m.scoreB, status: m.status,
+    }))
+  );
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -112,6 +141,7 @@ export const fixturesApi = {
   preview(payload: CreateFixturePayload): Fixture {
     const {
       tournamentName = '', teamAName, teamBName, teamAPlayers, teamBPlayers,
+      teamAColor = '#22D3EE', teamBColor = '#FBBF24',
       scheduleMode = 'full_fixture', courtsAvailable = 4,
       matchDurationMins = 30, pointsScheme = { win: 2, draw: 1, loss: 0 },
     } = payload;
@@ -158,6 +188,7 @@ export const fixturesApi = {
       id: fixtureId,
       tournamentName: (tournamentName ?? '').trim() || `${teamAName} vs ${teamBName}`,
       teamAName, teamBName,
+      teamAColor, teamBColor,
       teamAPlayers: cleanA, teamBPlayers: cleanB,
       scheduleMode, courtsAvailable, matchDurationMins,
       pointsScheme: { win: pointsScheme.win ?? 2, draw: pointsScheme.draw ?? 1, loss: pointsScheme.loss ?? 0 },
@@ -176,6 +207,7 @@ export const fixturesApi = {
       id: fixture.id,
       tournament_name: fixture.tournamentName,
       team_a_name: fixture.teamAName, team_b_name: fixture.teamBName,
+      team_a_color: fixture.teamAColor, team_b_color: fixture.teamBColor,
       team_a_players: fixture.teamAPlayers, team_b_players: fixture.teamBPlayers,
       schedule_mode: fixture.scheduleMode, courts_available: fixture.courtsAvailable,
       match_duration_mins: fixture.matchDurationMins,
@@ -213,6 +245,7 @@ export const fixturesApi = {
       id: fixture.id,
       tournament_name: fixture.tournamentName,
       team_a_name: fixture.teamAName, team_b_name: fixture.teamBName,
+      team_a_color: fixture.teamAColor, team_b_color: fixture.teamBColor,
       team_a_players: fixture.teamAPlayers, team_b_players: fixture.teamBPlayers,
       schedule_mode: fixture.scheduleMode, courts_available: fixture.courtsAvailable,
       match_duration_mins: fixture.matchDurationMins,
@@ -278,35 +311,51 @@ export const fixturesApi = {
     };
   },
 
-  async startMatch(fixtureId: string, matchId: string) {
-    const matchRef = doc(matchesCol(), matchId);
-    const snap = await getDoc(matchRef);
-    if (!snap.exists()) throw new Error('Match not found');
-    const current = snap.data();
-    const newStatus = current.status === 'in_progress' ? 'pending' : 'in_progress';
-    await updateDoc(matchRef, { status: newStatus });
-    const allMatches = await getMatchesForFixture(fixtureId);
-    const fixtureSnap = await getDoc(doc(fixturesCol(), fixtureId));
-    return {
-      matchId, status: newStatus,
-      progress: computeProgress(allMatches, fixtureSnap.data()?.is_finished ?? 0),
-    };
-  },
-
   async getStats(id: string): Promise<StatsResponse> {
     const snap = await getDoc(doc(fixturesCol(), id));
     if (!snap.exists()) throw new Error('Tournament not found');
-    const f = snap.data();
     const matches = await getMatchesForFixture(id);
-    const pts = { win: f.points_win, draw: f.points_draw, loss: f.points_loss };
-    const rounds = buildRounds(matches);
+    return buildStats(snap.data(), matches);
+  },
+
+  // ─── Instant local stats — computed from in-memory state, NO network ───────
+  // Used after an admin marks a result so the scoreboard/charts update at once,
+  // without waiting for (or reading back) the Firestore round-trip.
+  localStats(fixture: Fixture): StatsResponse {
+    const matches = flattenFixture(fixture);
+    const pts = fixture.pointsScheme;
     return {
       pairStats: computePairStats(matches, pts),
       playerStats: computePlayerStats(matches, { win: 10, draw: 5, loss: 0 }),
-      progress: computeProgress(matches, f.is_finished),
-      progression: computePointsProgression(matches, pts, rounds.length),
+      progress: computeProgress(matches, fixture.isFinished),
+      progression: computePointsProgression(matches, pts, fixture.rounds.length),
       teamStats: computeTeamStats(matches),
     };
+  },
+
+  localProgress(fixture: Fixture): ProgressStats {
+    return computeProgress(flattenFixture(fixture), fixture.isFinished);
+  },
+
+  // ─── Real-time subscription (for read-only viewers) ────────────────────────
+  // Pushes a fresh Fixture + Stats whenever the fixture doc or any of its match
+  // docs change in Firestore — so spectators see live scores without refreshing.
+  subscribeFixture(id: string, cb: (fixture: Fixture, stats: StatsResponse) => void): () => void {
+    let fData: any = null;
+    let matches: FlatMatch[] = [];
+    let hasFixture = false;
+    const emit = () => {
+      if (!hasFixture || !fData) return;
+      cb(serializeFixture(fData, matches), buildStats(fData, matches));
+    };
+    const unsubFixture = onSnapshot(doc(fixturesCol(), id), s => {
+      if (s.exists()) { fData = s.data(); hasFixture = true; emit(); }
+    });
+    const unsubMatches = onSnapshot(
+      query(matchesCol(), where('fixture_id', '==', id)),
+      s => { matches = s.docs.map(d => d.data() as FlatMatch); emit(); }
+    );
+    return () => { unsubFixture(); unsubMatches(); };
   },
 
   async search(id: string, q: string) {

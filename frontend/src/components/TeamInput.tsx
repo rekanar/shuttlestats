@@ -7,15 +7,76 @@ interface Props {
   loading: boolean;
 }
 
+// Preset swatches — vivid radiants first, then white + light shades, then black.
+const TEAM_COLOR_PRESETS = [
+  // Vivid
+  '#22D3EE', // cyan
+  '#FBBF24', // gold
+  '#F472B6', // magenta
+  '#A3E635', // lime
+  '#FB923C', // orange
+  '#A78BFA', // violet
+  '#F87171', // red
+  '#38BDF8', // sky
+  // Light / neutral shades
+  '#FFFFFF', // white
+  '#E2E8F0', // light slate
+  '#A5F3FC', // light cyan
+  '#BBF7D0', // light green
+  '#FEF08A', // light yellow
+  '#FBCFE8', // light pink
+  '#DDD6FE', // light lavender
+  '#FED7AA', // light peach
+  // Dark
+  '#000000', // black
+];
+
+// ─── Per-team color picker: radiant presets + a custom color input ─────────────
+function ColorPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="mb-3">
+      <label className="block text-xs font-bold mb-1.5 uppercase tracking-wide" style={{ color: 'rgba(240,237,214,0.6)' }}>
+        Team Color
+      </label>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {TEAM_COLOR_PRESETS.map(c => {
+          const selected = value.toLowerCase() === c.toLowerCase();
+          return (
+            <button key={c} type="button" onClick={() => onChange(c)}
+              aria-label={`Use color ${c}`}
+              className="w-7 h-7 rounded-full transition-transform hover:scale-110 active:scale-95"
+              style={{
+                background: c,
+                // Faint ring keeps white/black/dark swatches visible on the panel;
+                // selected gets a clear white halo offset by the navy bg.
+                border: '2px solid rgba(255,255,255,0.35)',
+                boxShadow: selected ? '0 0 0 2px #0f172a, 0 0 0 4px #ffffff' : `0 0 6px ${c}70`,
+              }} />
+          );
+        })}
+        {/* Custom color */}
+        <label title="Custom color"
+          className="relative w-7 h-7 rounded-full overflow-hidden cursor-pointer"
+          style={{ border: '2px solid rgba(255,255,255,0.35)', background: 'conic-gradient(#f87171,#fb923c,#fbbf24,#a3e635,#22d3ee,#38bdf8,#a78bfa,#f472b6,#f87171)' }}>
+          <input type="color" value={value} onChange={e => onChange(e.target.value)}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+        </label>
+        <span className="ml-1 text-[11px] font-mono font-bold" style={{ color: value }}>{value.toUpperCase()}</span>
+      </div>
+    </div>
+  );
+}
+
 function TeamPanel({
-  teamName, setTeamName, players, setPlayers, label, accentColor, lightBg, btnTextColor,
+  teamName, setTeamName, players, setPlayers, label, accentColor, onColorChange,
 }: {
   teamName: string; setTeamName: (v: string) => void;
   players: string[]; setPlayers: (v: string[]) => void;
-  label: string; accentColor: string; lightBg: string;
-  btnTextColor: string;
+  label: string; accentColor: string; onColorChange: (v: string) => void;
 }) {
   const [input, setInput] = useState('');
+  const lightBg = `${accentColor}1A`;      // ~10% alpha
+  const btnTextColor = '#0a1016';           // dark text reads on bright accents
 
   function addPlayer() {
     const name = input.trim();
@@ -37,7 +98,7 @@ function TeamPanel({
       style={{
         border: `2px solid ${accentColor}`,
         boxShadow: `0 0 24px ${accentColor}50, inset 0 1px 0 ${accentColor}20`,
-        background: 'rgba(4,16,8,0.80)',
+        background: 'rgba(15,23,42,0.80)',
       }}>
       {/* Team header with diagonal stripe feel */}
       <div className="px-4 py-3 flex items-center gap-2 relative overflow-hidden"
@@ -47,7 +108,7 @@ function TeamPanel({
           background: 'repeating-linear-gradient(60deg, transparent, transparent 10px, rgba(255,255,255,0.06) 10px, rgba(255,255,255,0.06) 14px)',
         }} />
         <span className="text-lg">🏸</span>
-        <span className="font-black text-base tracking-widest uppercase relative z-10" style={{ color: btnTextColor }}>{label}</span>
+        <span className="bs-display font-bold text-base tracking-widest uppercase relative z-10" style={{ color: btnTextColor }}>{label}</span>
       </div>
       <div className="p-4">
         <div className="mb-3">
@@ -60,6 +121,9 @@ function TeamPanel({
             onChange={e => setTeamName(e.target.value)}
           />
         </div>
+
+        {/* Team color */}
+        <ColorPicker value={accentColor} onChange={onColorChange} />
 
         <div className="flex gap-2 mb-2">
           <input
@@ -129,6 +193,8 @@ export default function TeamInput({ onSubmit, loading }: Props) {
   const [tournamentName, setTournamentName] = useState('');
   const [teamAName, setTeamAName] = useState('Team A');
   const [teamBName, setTeamBName] = useState('Team B');
+  const [teamAColor, setTeamAColor] = useState('#22D3EE');
+  const [teamBColor, setTeamBColor] = useState('#FBBF24');
   const [teamAPlayers, setTeamAPlayers] = useState<string[]>([]);
   const [teamBPlayers, setTeamBPlayers] = useState<string[]>([]);
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('full_fixture');
@@ -139,7 +205,7 @@ export default function TeamInput({ onSubmit, loading }: Props) {
     if (!canGenerate) return;
     onSubmit({
       tournamentName,
-      teamAName, teamBName, teamAPlayers, teamBPlayers,
+      teamAName, teamBName, teamAColor, teamBColor, teamAPlayers, teamBPlayers,
       scheduleMode,
       courtsAvailable: 4,
       matchDurationMins: 30,
@@ -173,12 +239,12 @@ export default function TeamInput({ onSubmit, loading }: Props) {
         {/* Team panels */}
         <div className="flex flex-col sm:flex-row gap-5 mb-6">
           <TeamPanel label="Team A"
-            accentColor="#00BFFF" lightBg="rgba(0,191,255,0.10)" btnTextColor="#001a2a"
+            accentColor={teamAColor} onColorChange={setTeamAColor}
             teamName={teamAName} setTeamName={setTeamAName}
             players={teamAPlayers} setPlayers={setTeamAPlayers} />
           <div className="w-px bg-gradient-to-b from-transparent via-amber-300 to-transparent hidden sm:block" />
           <TeamPanel label="Team B"
-            accentColor="#FFD700" lightBg="rgba(255,215,0,0.10)" btnTextColor="#1a1400"
+            accentColor={teamBColor} onColorChange={setTeamBColor}
             teamName={teamBName} setTeamName={setTeamBName}
             players={teamBPlayers} setPlayers={setTeamBPlayers} />
         </div>

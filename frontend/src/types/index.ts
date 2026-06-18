@@ -49,6 +49,8 @@ export interface Fixture {
   tournamentName: string;
   teamAName: string;
   teamBName: string;
+  teamAColor: string;
+  teamBColor: string;
   teamAPlayers: string[];
   teamBPlayers: string[];
   scheduleMode: ScheduleMode;
@@ -134,6 +136,8 @@ export interface CreateFixturePayload {
   tournamentName: string;
   teamAName: string;
   teamBName: string;
+  teamAColor: string;
+  teamBColor: string;
   teamAPlayers: string[];
   teamBPlayers: string[];
   scheduleMode: ScheduleMode;

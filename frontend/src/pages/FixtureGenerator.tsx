@@ -4,16 +4,14 @@ import { fixturesApi } from '../api/fixturesApi';
 import { championshipsApi } from '../api/championshipsApi';
 import type { ChampionshipSummary } from '../types/championship';
 import TeamInput from '../components/TeamInput';
-import ProgressBanner from '../components/ProgressBanner';
 import AllMatchesList from '../components/AllMatchesList';
 import StatsPanel from '../components/StatsPanel';
 import TeamScoreBoard from '../components/TeamScoreBoard';
-import TournamentHistory from '../components/TournamentHistory';
 import { exportScheduleCsv, exportPendingCsv, exportStatsCsv } from '../services/exportService';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from '../components/LoginModal';
 import type {
-  Fixture, CreateFixturePayload, MatchResult, StatsResponse, StatusFilter, TournamentSummary,
+  Fixture, CreateFixturePayload, MatchResult, MatchStatus, StatsResponse, StatusFilter, TournamentSummary,
 } from '../types';
 import { BarChart2, Calendar, ArrowLeft, Search, Trophy, X, Download, Upload, CloudUpload, CheckCircle2, Printer, Trash2, FileSpreadsheet, ClipboardList, ShieldCheck, LogOut, Lock, Plus, ChevronRight } from 'lucide-react';
 
@@ -93,8 +91,8 @@ function PlayerInput({
     .filter(p => q ? p.toLowerCase().includes(q) : true);
 
   return (
-    <div className="flex-1 min-w-[140px]" ref={ref}>
-      <span className="block text-[10px] font-bold mb-1 tracking-wide" style={{ color: accentColor }}>{label}</span>
+    <div className="flex-1 min-w-[88px]" ref={ref}>
+      <span className="block text-[10px] font-bold mb-0.5 tracking-wide truncate" style={{ color: accentColor }}>{label}</span>
       <div className="relative">
         <input
           type="text"
@@ -107,7 +105,7 @@ function PlayerInput({
             if (e.key === 'Escape') setOpen(false);
             if (e.key === 'Enter' && value.trim()) { onSelect(value.trim()); setOpen(false); }
           }}
-          className="w-full text-sm rounded-lg px-3 py-2 border focus:outline-none focus:ring-2 pr-7"
+          className="w-full text-xs rounded-lg px-2.5 py-1.5 border focus:outline-none focus:ring-2 pr-6"
           style={{
             background: 'rgba(255,255,255,0.08)', color: '#f0edd6',
             borderColor: value ? accentColor + '60' : 'rgba(212,175,55,0.25)',
@@ -147,9 +145,9 @@ function PlayerInput({
 
 // ─── Match Search Card — find a match by Team A side and/or Team B side ────────
 function MatchSearchCard({
-  teamAName, teamBName, teamAPlayers, teamBPlayers, searchA, searchB, setSearchA, setSearchB,
+  teamAName, teamBName, teamAColor, teamBColor, teamAPlayers, teamBPlayers, searchA, searchB, setSearchA, setSearchB,
 }: {
-  teamAName: string; teamBName: string;
+  teamAName: string; teamBName: string; teamAColor: string; teamBColor: string;
   teamAPlayers: string[]; teamBPlayers: string[];
   searchA: [string, string]; searchB: [string, string];
   setSearchA: (v: [string, string]) => void;
@@ -196,20 +194,20 @@ function MatchSearchCard({
       {/* Two team sides, each with up to two player inputs */}
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
         {/* Team A side */}
-        <div className="rounded-xl p-2.5" style={{ border: '1px solid rgba(0,191,255,0.3)', background: 'rgba(0,191,255,0.05)' }}>
+        <div className="rounded-xl p-2.5" style={{ border: `1px solid ${teamAColor}4D`, background: `${teamAColor}0D` }}>
           <div className="flex items-center gap-1.5 mb-2">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#00BFFF', boxShadow: '0 0 6px #00BFFF' }} />
-            <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: '#00BFFF' }}>{teamAName}</span>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: teamAColor, boxShadow: `0 0 6px ${teamAColor}` }} />
+            <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: teamAColor }}>{teamAName}</span>
           </div>
           <div className="flex gap-2">
             <PlayerInput
               label="Player 1" placeholder="Search…" value={searchA[0]}
-              allPlayers={teamAPlayers} excludePlayer={searchA[1]} accentColor="#00BFFF"
+              allPlayers={teamAPlayers} excludePlayer={searchA[1]} accentColor={teamAColor}
               onChange={v => setA(0, v)} onSelect={v => setA(0, v)} onClear={() => setA(0, '')}
             />
             <PlayerInput
               label="Player 2 (optional)" placeholder="Search…" value={searchA[1]}
-              allPlayers={teamAPlayers} excludePlayer={searchA[0]} accentColor="#00BFFF"
+              allPlayers={teamAPlayers} excludePlayer={searchA[0]} accentColor={teamAColor}
               onChange={v => setA(1, v)} onSelect={v => setA(1, v)} onClear={() => setA(1, '')}
             />
           </div>
@@ -221,28 +219,28 @@ function MatchSearchCard({
         </div>
 
         {/* Team B side */}
-        <div className="rounded-xl p-2.5" style={{ border: '1px solid rgba(255,215,0,0.3)', background: 'rgba(255,215,0,0.05)' }}>
+        <div className="rounded-xl p-2.5" style={{ border: `1px solid ${teamBColor}4D`, background: `${teamBColor}0D` }}>
           <div className="flex items-center gap-1.5 mb-2">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#FFD700', boxShadow: '0 0 6px #FFD700' }} />
-            <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: '#FFD700' }}>{teamBName}</span>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: teamBColor, boxShadow: `0 0 6px ${teamBColor}` }} />
+            <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: teamBColor }}>{teamBName}</span>
           </div>
           <div className="flex gap-2">
             <PlayerInput
               label="Player 1" placeholder="Search…" value={searchB[0]}
-              allPlayers={teamBPlayers} excludePlayer={searchB[1]} accentColor="#FFD700"
+              allPlayers={teamBPlayers} excludePlayer={searchB[1]} accentColor={teamBColor}
               onChange={v => setB(0, v)} onSelect={v => setB(0, v)} onClear={() => setB(0, '')}
             />
             <PlayerInput
               label="Player 2 (optional)" placeholder="Search…" value={searchB[1]}
-              allPlayers={teamBPlayers} excludePlayer={searchB[0]} accentColor="#FFD700"
+              allPlayers={teamBPlayers} excludePlayer={searchB[0]} accentColor={teamBColor}
               onChange={v => setB(1, v)} onSelect={v => setB(1, v)} onClear={() => setB(1, '')}
             />
           </div>
         </div>
       </div>
 
-      <p className="mt-2.5 text-[11px] text-amber-200/45">
-        Search either team to list all their matches, or both teams to jump straight to that match-up — then check its status and start it.
+      <p className="mt-2.5 text-[11px] text-slate-400">
+        Search either team to list all their matches, or both teams to jump straight to that match-up.
       </p>
     </div>
   );
@@ -260,13 +258,11 @@ export default function FixtureGenerator() {
   const [tournaments, setTournaments] = useState<TournamentSummary[]>([]);
   const [championships, setChampionships] = useState<ChampionshipSummary[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
-  const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
   const [fixture, setFixture] = useState<Fixture | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [deleteMatchFlash, setDeleteMatchFlash] = useState<string | null>(null);
-  const [deletingTournamentId, setDeletingTournamentId] = useState<string | null>(null);
   const [dirtyMatchIds, setDirtyMatchIds] = useState<string[]>([]);
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -274,6 +270,7 @@ export default function FixtureGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('schedule');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [matchFilter, setMatchFilter] = useState('');
   // Team-aware search: up to two players per team side.
   const [searchA, setSearchA] = useState<[string, string]>(['', '']);
   const [searchB, setSearchB] = useState<[string, string]>(['', '']);
@@ -297,6 +294,20 @@ export default function FixtureGenerator() {
     if (fixture?.id) refreshStats(fixture.id);
   }, [fixture?.id, refreshStats]);
 
+  // ─── Real-time updates for read-only viewers ───────────────────────────────
+  // Admins drive the UI via instant local recompute (their own optimistic edits),
+  // so we only subscribe for viewers — their scoreboard/stats then auto-update
+  // within ~1s of an admin syncing, with no page reload.
+  const fixtureId = fixture?.id;
+  useEffect(() => {
+    if (!fixtureId || isAdmin) return;
+    const unsub = fixturesApi.subscribeFixture(fixtureId, (f, s) => {
+      setFixture(f);
+      setStats(s);
+    });
+    return () => unsub();
+  }, [fixtureId, isAdmin]);
+
   async function handleCreate(payload: CreateFixturePayload) {
     setLoading(true); setError(null);
     try {
@@ -309,6 +320,7 @@ export default function FixtureGenerator() {
       setActiveTab('schedule');
       setSearchA(['', '']);
       setSearchB(['', '']);
+      setMatchFilter('');
       setView('fixture');
     } catch (e: any) {
       setError(e?.message ?? 'Failed to generate fixture.');
@@ -341,26 +353,6 @@ export default function FixtureGenerator() {
   }
 
 
-  async function handleStart(matchId: string) {
-    if (!fixture) return;
-    const currentMatch = fixture.rounds.flatMap(r => r.matches).find(m => m.id === matchId);
-    if (!currentMatch) return;
-    const newStatus = currentMatch.status === 'in_progress' ? 'pending' : 'in_progress';
-    // Update local state immediately
-    setFixture(prev => {
-      if (!prev) return prev;
-      const rounds = prev.rounds.map(r => ({
-        ...r,
-        matches: r.matches.map(m =>
-          m.id === matchId ? { ...m, status: newStatus as import('../types').MatchStatus } : m
-        ),
-      }));
-      return { ...prev, rounds };
-    });
-    // Mark as dirty — will be synced when user clicks Sync
-    markDirty(matchId);
-  }
-
   async function handleOpenTournament(id: string) {
     setLoading(true); setError(null);
     try {
@@ -373,8 +365,8 @@ export default function FixtureGenerator() {
       setSearchA(['', '']);
       setSearchB(['', '']);
       setStatusFilter('all');
+      setMatchFilter('');
       setView('fixture');
-      setHistoryPanelOpen(false);
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load tournament.');
     } finally { setLoading(false); }
@@ -413,9 +405,7 @@ export default function FixtureGenerator() {
 
   async function handleDeleteTournament(id: string, name: string) {
     if (!confirm(`Delete "${name}"? All match data will be permanently removed.`)) return;
-    // Mark as deleting — shows spinner on the card
-    setDeletingTournamentId(id);
-    // Optimistically remove from the history list immediately
+    // Optimistically remove from the dashboard list immediately
     setTournaments(prev => prev.filter(t => t.id !== id));
     try {
       await fixturesApi.delete(id);
@@ -431,8 +421,6 @@ export default function FixtureGenerator() {
       // Restore the list so the user can retry
       await loadHistory();
       setError(`Failed to delete "${name}" from cloud: ${e?.message ?? 'unknown error'}. Check your connection and try again.`);
-    } finally {
-      setDeletingTournamentId(null);
     }
   }
 
@@ -452,6 +440,7 @@ export default function FixtureGenerator() {
     setDirtyMatchIds([]);
     setSearchA(['', '']);
     setSearchB(['', '']);
+    setMatchFilter('');
     setView('home');
     loadHistory();
   }
@@ -494,20 +483,18 @@ export default function FixtureGenerator() {
 
   async function handleResult(matchId: string, result: MatchResult) {
     if (!fixture) return;
-    const newStatus = result === null ? 'pending' : result === 'not_played' ? 'not_played' : 'completed';
-    // Update local state immediately
-    setFixture(prev => {
-      if (!prev) return prev;
-      const rounds = prev.rounds.map(r => ({
-        ...r,
-        matches: r.matches.map(m =>
-          m.id === matchId ? { ...m, result, status: newStatus as import('../types').MatchStatus } : m
-        ),
-      }));
-      return { ...prev, rounds };
-    });
-    refreshStats(fixture.id);
-    // Mark as dirty — will be synced when user clicks Sync
+    const newStatus: MatchStatus = result === null ? 'pending' : result === 'not_played' ? 'not_played' : 'completed';
+    // Build the updated fixture, then recompute progress + stats LOCALLY (no
+    // network) so the scoreboard and charts update instantly.
+    const rounds = fixture.rounds.map(r => ({
+      ...r,
+      matches: r.matches.map(m => m.id === matchId ? { ...m, result, status: newStatus } : m),
+    }));
+    const updated: Fixture = { ...fixture, rounds };
+    updated.progress = fixturesApi.localProgress(updated);
+    setFixture(updated);
+    setStats(fixturesApi.localStats(updated));
+    // Mark as dirty — will be synced to the cloud when the admin clicks Sync.
     markDirty(matchId);
   }
 
@@ -602,6 +589,30 @@ export default function FixtureGenerator() {
 
       {/* ── Main ─────────────────────────────────────────────────────────── */}
       <main className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-6 relative z-10">
+        {/* ── Persistent ADMIN status banner (all views when signed in) ────── */}
+        {!authLoading && isAdmin && (
+          <div className="bs-no-print mb-3 flex items-center gap-3 px-4 py-2.5 rounded-xl border"
+            style={{
+              background: 'linear-gradient(90deg, rgba(16,185,129,0.20), rgba(16,185,129,0.06))',
+              borderColor: 'rgba(16,185,129,0.55)',
+              boxShadow: '0 0 18px rgba(16,185,129,0.20)',
+            }}>
+            <ShieldCheck size={18} className="text-emerald-300 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-black tracking-wide" style={{ color: '#6EE7B7' }}>
+                You're signed in as ADMIN
+              </p>
+              <p className="text-xs truncate" style={{ color: 'rgba(110,231,183,0.65)' }}>
+                {user?.email ? `${user.email} · ` : ''}create, edit &amp; score enabled
+              </p>
+            </div>
+            <button onClick={logout}
+              className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg border border-emerald-700/50 text-xs font-bold text-emerald-200/90 hover:text-emerald-100 hover:bg-emerald-900/25 transition-colors">
+              <LogOut size={12} /> Sign out
+            </button>
+          </div>
+        )}
+
         {error && (
           <div className="mb-4 p-3 bg-red-900/80 border border-red-600/50 rounded-lg text-sm text-red-200">{error}</div>
         )}
@@ -609,28 +620,15 @@ export default function FixtureGenerator() {
         {/* ── VIEW: Home — Unified Dashboard ─────────────────────────────── */}
         {view === 'home' && (
           <div className="max-w-3xl mx-auto">
-            {/* Admin auth control — centered below the banner (no overlap) */}
-            {!authLoading && (
+            {/* Admin sign-in (viewers only — admins see the status banner above) */}
+            {!authLoading && !isAdmin && (
               <div className="flex justify-center mb-6">
-                {isAdmin ? (
-                  <div className="bs-card flex items-center gap-3 px-4 py-2.5">
-                    <span className="flex items-center gap-1.5 text-sm font-bold" style={{ color: '#FFE066' }}>
-                      <ShieldCheck size={15} className="text-amber-400" /> Admin
-                    </span>
-                    {user?.email && <span className="hidden sm:inline text-xs text-amber-200/40">{user.email}</span>}
-                    <button onClick={logout}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-800/40 text-xs text-amber-300/80 hover:bg-white/5 transition-colors">
-                      <LogOut size={12} /> Sign out
-                    </button>
-                  </div>
-                ) : (
-                  <button onClick={() => setLoginOpen(true)}
-                    className="bs-card flex items-center gap-2 px-5 py-2.5 text-sm font-bold hover:scale-[1.02] transition-transform"
-                    style={{ color: '#FFE066' }}>
-                    <Lock size={14} className="text-amber-400" /> Admin sign in
-                    <span className="hidden sm:inline text-xs font-normal text-amber-200/40">· everyone else is read-only</span>
-                  </button>
-                )}
+                <button onClick={() => setLoginOpen(true)}
+                  className="bs-card flex items-center gap-2 px-5 py-2.5 text-sm font-bold hover:scale-[1.02] transition-transform"
+                  style={{ color: '#FFE066' }}>
+                  <Lock size={14} className="text-amber-400" /> Admin sign in
+                  <span className="hidden sm:inline text-xs font-normal text-amber-200/40">· everyone else is read-only</span>
+                </button>
               </div>
             )}
 
@@ -675,8 +673,8 @@ export default function FixtureGenerator() {
                       ROUND ROBIN
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="font-black text-sm truncate" style={{ color: '#f0edd6' }}>{item.name}</div>
-                      <div className="text-[11px] text-amber-200/45 truncate">{item.sub} · {item.completedMatches}/{item.totalMatches} matches · {item.pct}%</div>
+                      <div className="font-black text-sm truncate" style={{ color: 'var(--text)' }}>{item.name}</div>
+                      <div className="text-[11px] text-slate-400 truncate">{item.sub} · {item.completedMatches}/{item.totalMatches} matches · {item.pct}%</div>
                     </div>
                     <span className="hidden sm:inline shrink-0 text-[10px] font-bold" style={{ color: item.isFinished ? '#FFD700' : '#00BFFF' }}>
                       {item.isFinished ? '🏆 Finished' : item.completedMatches === 0 ? '🆕 New' : '⏳ Ongoing'}
@@ -690,8 +688,8 @@ export default function FixtureGenerator() {
                       CHAMPIONSHIP
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="font-black text-sm truncate" style={{ color: '#f0edd6' }}>{item.name}</div>
-                      <div className="text-[11px] text-amber-200/45 truncate">{item.sub}</div>
+                      <div className="font-black text-sm truncate" style={{ color: 'var(--text)' }}>{item.name}</div>
+                      <div className="text-[11px] text-slate-400 truncate">{item.sub}</div>
                     </div>
                     <Trophy size={15} className="text-amber-400 shrink-0" />
                     <ChevronRight size={16} className="text-amber-400/40 shrink-0" />
@@ -785,62 +783,28 @@ export default function FixtureGenerator() {
               </div>
             )}
 
-            {/* Tournament + teams banner */}
-            <div className="bs-card px-4 py-3 mb-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <div className="flex items-center gap-2 min-w-0">
-                <Trophy size={14} className="text-amber-400 shrink-0" />
-                <span className="font-black text-sm text-amber-300 truncate">{fixture.tournamentName}</span>
-              </div>
-              <div className="flex items-start sm:items-center gap-3 sm:gap-5 flex-wrap sm:ml-auto text-xs">
-                <div className="flex flex-col">
-                  <span className="font-black" style={{ color: '#00BFFF' }}>{fixture.teamAName}</span>
-                  <span style={{ color: 'rgba(0,191,255,0.85)' }}>{fixture.teamAPlayers.join(', ')}</span>
-                </div>
-                <span className="text-amber-200/25 font-bold hidden sm:block">vs</span>
-                <div className="flex flex-col sm:text-right">
-                  <span className="font-black" style={{ color: '#FFD700' }}>{fixture.teamBName}</span>
-                  <span style={{ color: 'rgba(255,215,0,0.85)' }}>{fixture.teamBPlayers.join(', ')}</span>
-                </div>
-              </div>
-              {/* Delete entire tournament */}
-              {isAdmin && isSaved && (
-                <button
-                  onClick={() => handleDeleteTournament(fixture.id, fixture.tournamentName)}
-                  title="Delete this entire tournament"
-                  className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs border border-red-800/30 text-red-400/50 hover:text-red-300 hover:border-red-600/50 hover:bg-red-900/15 transition-colors"
-                >
-                  <Trash2 size={12} /> Delete Tournament
-                </button>
-              )}
-            </div>
-
-            {/* Team Scoreboard */}
+            {/* ── Combined scoreboard card: header + live score + tabs ──────── */}
             <TeamScoreBoard
+              tournamentName={fixture.tournamentName}
               teamAName={fixture.teamAName}
               teamBName={fixture.teamBName}
+              teamAColor={fixture.teamAColor}
+              teamBColor={fixture.teamBColor}
               teamStats={stats?.teamStats}
               progress={fixture.progress}
-            />
-
-            {/* Progress + Tabs bar */}
-            <div className="bs-card px-4 pt-3 pb-0 mb-4">
-              <ProgressBanner
-                progress={fixture.progress}
-                teamAName={fixture.teamAName}
-                teamBName={fixture.teamBName}
-                matchesPerPlayer={fixture.summary.matchesPerPlayer}
-              />
-              <div className="flex border-t border-amber-900/20 mt-3">
-                <button onClick={() => setActiveTab('schedule')}
-                  className={`bs-tab ${activeTab === 'schedule' ? 'bs-tab-active' : ''}`}>
-                  <Calendar size={16} /> Schedule
-                </button>
-                <button onClick={() => setActiveTab('stats')}
-                  className={`bs-tab ${activeTab === 'stats' ? 'bs-tab-active' : ''}`}>
-                  <BarChart2 size={16} /> Stats &amp; Charts
-                </button>
-              </div>
-            </div>
+              isFinished={fixture.isFinished}
+              canDelete={isAdmin && isSaved}
+              onDelete={() => handleDeleteTournament(fixture.id, fixture.tournamentName)}
+            >
+              <button onClick={() => setActiveTab('schedule')}
+                className={`bs-tab ${activeTab === 'schedule' ? 'bs-tab-active' : ''}`}>
+                <Calendar size={16} /> Schedule
+              </button>
+              <button onClick={() => setActiveTab('stats')}
+                className={`bs-tab ${activeTab === 'stats' ? 'bs-tab-active' : ''}`}>
+                <BarChart2 size={16} /> Stats &amp; Charts
+              </button>
+            </TeamScoreBoard>
 
             {/* ── Schedule Tab ─────────────────────────────────────────── */}
             {activeTab === 'schedule' && (
@@ -848,6 +812,8 @@ export default function FixtureGenerator() {
                 <MatchSearchCard
                   teamAName={fixture.teamAName}
                   teamBName={fixture.teamBName}
+                  teamAColor={fixture.teamAColor}
+                  teamBColor={fixture.teamBColor}
                   teamAPlayers={fixture.teamAPlayers}
                   teamBPlayers={fixture.teamBPlayers}
                   searchA={searchA}
@@ -856,25 +822,39 @@ export default function FixtureGenerator() {
                   setSearchB={setSearchB}
                 />
 
-                {/* ── Status Filter + Export ────────────────────────── */}
+                {/* ── Status Filter + Match # + Export ──────────────── */}
                 <div className="flex gap-2 flex-wrap items-center">
                   {([
-                    { f: 'all',         label: `All (${fixture.progress.total})` },
-                    { f: 'in_progress', label: `🔴 Live (${fixture.progress.inProgress})` },
-                    { f: 'pending',     label: `⏳ Pending (${pendingCount})` },
-                    { f: 'completed',   label: `✅ Done (${fixture.progress.completed + fixture.progress.notPlayed})` },
+                    { f: 'completed', label: `✅ Done (${fixture.progress.completed + fixture.progress.notPlayed})` },
+                    { f: 'pending',   label: `⏳ Pending (${pendingCount})` },
+                    { f: 'all',       label: `All (${fixture.progress.total})` },
                   ] as { f: StatusFilter; label: string }[]).map(({ f, label }) => (
                     <button key={f} onClick={() => setStatusFilter(f)}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
                         statusFilter === f
-                          ? f === 'in_progress'
-                            ? 'bg-orange-700 text-white border-orange-600'
-                            : 'bg-amber-600 text-white border-amber-600'
+                          ? 'bg-amber-600 text-white border-amber-600'
                           : 'border-amber-800/40 text-amber-300/70 hover:border-amber-500 hover:bg-white/5'
                       }`}>
                       {label}
                     </button>
                   ))}
+
+                  {/* Jump to a specific match number */}
+                  <div className="relative">
+                    <input
+                      type="text" inputMode="numeric" value={matchFilter}
+                      onChange={e => setMatchFilter(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="Match #"
+                      className="w-24 text-xs rounded-full pl-3 pr-6 py-1.5 border focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      style={{ background: 'rgba(255,255,255,0.06)', color: '#f0edd6', borderColor: matchFilter ? 'rgba(212,175,55,0.6)' : 'rgba(212,175,55,0.25)' }}
+                    />
+                    {matchFilter && (
+                      <button onClick={() => setMatchFilter('')} title="Clear match filter"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-amber-400/50 hover:text-amber-300">
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
 
                   {/* Export buttons (hidden when printing) */}
                   <div className="bs-no-print ml-auto flex gap-2">
@@ -902,12 +882,14 @@ export default function FixtureGenerator() {
                     rounds={fixture.rounds}
                     teamAName={fixture.teamAName}
                     teamBName={fixture.teamBName}
+                    teamAColor={fixture.teamAColor}
+                    teamBColor={fixture.teamBColor}
                     searchA={searchA}
                     searchB={searchB}
                     statusFilter={statusFilter}
+                    matchNumberFilter={matchFilter}
                     onResult={handleResult}
                     onScore={handleScore}
-                    onStart={handleStart}
                     onDeleteMatch={handleDeleteMatch}
                     isFinished={fixture.isFinished}
                     canEdit={isAdmin}
@@ -932,6 +914,8 @@ export default function FixtureGenerator() {
                   stats={stats}
                   teamAName={fixture.teamAName}
                   teamBName={fixture.teamBName}
+                  teamAColor={fixture.teamAColor}
+                  teamBColor={fixture.teamBColor}
                   totalRounds={fixture.rounds.length}
                 />
               </div>
@@ -942,81 +926,6 @@ export default function FixtureGenerator() {
           </div>
         )}
       </main>
-
-      {/* ── Fixed History Ribbon (right edge) ─────────────────────────────── */}
-      <button
-        className="bs-ribbon-btn"
-        onClick={() => setHistoryPanelOpen(true)}
-        title="Tournament History"
-        aria-label="Open tournament history"
-      >
-        <Trophy size={14} className="text-amber-400 mb-1" />
-        {'HISTORY'.split('').map((ch, i) => (
-          <span key={i} className="text-[8px] font-black leading-none" style={{ color: 'rgba(240,210,100,0.80)' }}>{ch}</span>
-        ))}
-        {tournaments.length > 0 && (
-          <span className="mt-1.5 text-[8px] font-black px-1.5 py-0.5 rounded-full bg-amber-700/50 text-amber-200 leading-none">
-            {tournaments.length}
-          </span>
-        )}
-      </button>
-
-      {/* ── History Side Panel ────────────────────────────────────────────── */}
-      {historyPanelOpen && (
-        <>
-          {/* Backdrop */}
-          <div className="bs-panel-backdrop" onClick={() => setHistoryPanelOpen(false)} />
-
-          {/* Panel */}
-          <div className="bs-history-panel">
-            {/* Panel header */}
-            <div className="flex items-center justify-between px-4 py-3 shrink-0"
-              style={{ borderBottom: '1px solid rgba(212,175,55,0.25)', background: 'rgba(8,22,10,0.95)' }}>
-              <div className="flex items-center gap-2">
-                <Trophy size={15} className="text-amber-400" />
-                <span className="font-black text-amber-300 text-sm tracking-wide">Tournament History</span>
-                {tournaments.length > 0 && (
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-700/35 text-amber-300">
-                    {tournaments.length}
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => setHistoryPanelOpen(false)}
-                className="text-amber-400/50 hover:text-amber-300 transition-colors p-1 rounded-lg hover:bg-white/5"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Subtitle */}
-            {!historyLoading && tournaments.length > 0 && (
-              <div className="px-4 py-2 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <span className="text-[10px]" style={{ color: 'rgba(240,237,214,0.40)' }}>
-                  {tournaments.filter(t => !t.isFinished && t.completedMatches > 0).length} ongoing ·{' '}
-                  {tournaments.filter(t => t.isFinished).length} finished ·{' '}
-                  {tournaments.filter(t => t.completedMatches === 0).length} not started
-                </span>
-              </div>
-            )}
-
-            {/* Panel content — scrollable list */}
-            <div className="flex-1 overflow-y-auto p-3">
-              <TournamentHistory
-                tournaments={tournaments}
-                loading={historyLoading}
-                onOpen={(id) => {
-                  setHistoryPanelOpen(false);
-                  handleOpenTournament(id);
-                }}
-                onDelete={isAdmin ? handleDeleteTournament : undefined}
-                deletingId={deletingTournamentId}
-                panelMode
-              />
-            </div>
-          </div>
-        </>
-      )}
 
       {/* ── Admin Login Modal ─────────────────────────────────────────────── */}
       {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}

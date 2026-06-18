@@ -7,38 +7,59 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --gold:        #D4AF37;
-  --gold-light:  #F5D55A;
-  --gold-dim:    #8B6914;
-  --team-a:      #00BFFF;   /* electric cyan */
-  --team-a-light:#33CCFF;
-  --team-b:      #C89B00;   /* dark gold — readable on dark bg */
-  --team-b-light:#FFD700;   /* bright gold */
+  /* Surfaces — deep-navy 3-layer stack (plain, solid, mobile-friendly) */
+  --bg:          #0F172A;   /* page background */
+  --surface:     #1E293B;   /* cards */
+  --surface-2:   #2A3A52;   /* nested panels / inputs / table heads */
+  --border:      rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(148, 163, 184, 0.28);
+
+  /* Text ramp — crisp near-white → slate, no more washed-out amber body text */
+  --text:        #F1F5F9;   /* primary */
+  --text-dim:    #CBD5E1;   /* secondary */
+  --text-muted:  #94A3B8;   /* labels / meta */
+
+  /* Accents — bright */
+  --gold:        #FBBF24;
+  --gold-light:  #FCD34D;
+  --gold-dim:    #B45309;
+  --team-a:      #22D3EE;   /* electric cyan */
+  --team-a-light:#67E8F9;
+  --team-b:      #FBBF24;   /* trophy gold */
+  --team-b-light:#FCD34D;
+
+  /* Fonts */
+  --font-body:    'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Rajdhani', 'Inter', sans-serif;
+  --font-numeric: 'Orbitron', 'Rajdhani', sans-serif;
 }
 
-/* ── Court Background ─────────────────────────────────────────────────────── */
+/* ── Background — plain deep navy (mobile-first) ───────────────────────────── */
 body {
   min-height: 100vh;
-  background-image: url('/images/Background_nonet.png');
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  background-color: #071a0d;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 #root { min-height: 100vh; position: relative; }
 
+/* Display font for headings + brand; numeric font helper for scoreboards */
+h1, h2, h3, h4, .bs-display { font-family: var(--font-display); letter-spacing: 0.01em; }
+.bs-numeric { font-family: var(--font-numeric); font-weight: 800; letter-spacing: 0.02em; }
+
 /* ── App Header ───────────────────────────────────────────────────────────── */
 .bs-header {
-  background: rgba(3, 8, 4, 0.92);
-  backdrop-filter: blur(20px) saturate(1.8);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  border-bottom: 2px solid rgba(0,191,255,0.45);
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom: 2px solid rgba(34,211,238,0.45);
   box-shadow:
-    0 2px 32px rgba(0,0,0,0.7),
-    0 1px 0 rgba(212,175,55,0.25),
-    inset 0 -1px 0 rgba(0,191,255,0.20);
+    0 2px 28px rgba(0,0,0,0.55),
+    0 1px 0 rgba(251,191,36,0.25),
+    inset 0 -1px 0 rgba(34,211,238,0.20);
   min-height: 80px;
 }
 
@@ -89,9 +110,10 @@ body {
 
 /* ── "BADMINTON" letters — rainbow color + glow pulse ──────────────────── */
 .bs-ch-bad {
-  font-weight: 900;
-  font-size: 1.65rem;
-  letter-spacing: 0.04em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.8rem;
+  letter-spacing: 0.06em;
   display: inline-block;
   color: var(--ch-color, #FFD700);
   text-shadow: 0 0 10px var(--ch-color, #FFD700), 0 2px 8px rgba(0,0,0,0.6);
@@ -100,9 +122,10 @@ body {
 
 /* ── "STARZ" letters — rainbow color + glow pulse, bigger ──────────────── */
 .bs-ch-starz {
-  font-weight: 900;
-  font-size: 2rem;
-  letter-spacing: 0.08em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.2rem;
+  letter-spacing: 0.1em;
   display: inline-block;
   color: var(--ch-color, #FFD700);
   text-shadow: 0 0 12px var(--ch-color, #FFD700), 0 2px 10px rgba(0,0,0,0.6);
@@ -114,21 +137,19 @@ body {
   50%       { filter: brightness(1.55); }
 }
 
-/* ── Glassmorphism Card ───────────────────────────────────────────────────── */
+/* ── Card — solid navy surface, clear depth (no more muddy green glass) ────── */
 .bs-card {
   position: relative;
-  background: rgba(8, 25, 12, 0.55);
-  backdrop-filter: blur(22px) saturate(1.7) brightness(1.08);
-  -webkit-backdrop-filter: blur(22px) saturate(1.7) brightness(1.08);
+  background: var(--surface);
   border-radius: 1.1rem;
-  border: 1px solid rgba(212, 175, 55, 0.28);
+  border: 1px solid var(--border);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 243, 180, 0.10);
+    0 10px 30px rgba(0, 0, 0, 0.40),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   overflow: hidden;
 }
 
-/* Gold foil top stripe */
+/* Accent top stripe — cyan → gold (the two team colours) */
 .bs-card::before {
   content: '';
   position: absolute;
@@ -136,11 +157,10 @@ body {
   height: 3px;
   background: linear-gradient(90deg,
     transparent 0%,
-    var(--gold-dim) 10%,
-    var(--gold) 30%,
-    var(--gold-light) 50%,
-    var(--gold) 70%,
-    var(--gold-dim) 90%,
+    var(--team-a) 18%,
+    var(--team-a-light) 38%,
+    var(--gold-light) 62%,
+    var(--gold) 82%,
     transparent 100%
   );
   z-index: 1;
@@ -151,20 +171,21 @@ body {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.65rem 1.15rem;
-  font-weight: 800;
-  font-size: 0.9rem;
-  letter-spacing: 0.03em;
+  padding: 0.7rem 1.15rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
   border-bottom: 3px solid transparent;
-  color: rgba(240, 237, 214, 0.55);
+  color: var(--text-muted);
   transition: color 0.2s, border-color 0.2s, text-shadow 0.2s, background 0.2s;
 }
-.bs-tab:hover { color: #f0edd6; background: rgba(255,255,255,0.04); }
+.bs-tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
 .bs-tab-active {
-  color: #FFE066;
-  border-bottom-color: #FFD700;
-  text-shadow: 0 0 14px rgba(255, 215, 0, 0.6);
-  background: linear-gradient(180deg, rgba(255,215,0,0.10), transparent);
+  color: var(--gold-light);
+  border-bottom-color: var(--gold);
+  text-shadow: 0 0 14px rgba(251, 191, 36, 0.55);
+  background: linear-gradient(180deg, rgba(251,191,36,0.12), transparent);
 }
 
 /* ── Section title — bright gradient heading for in-card sections ─────────── */
@@ -185,13 +206,14 @@ body {
 
 /* ── Section headers inside cards ────────────────────────────────────────── */
 .bs-section-header {
-  background: linear-gradient(135deg, rgba(4,16,8,0.9) 0%, rgba(15,52,25,0.9) 100%);
-  color: #fff;
-  padding: 0.65rem 1rem;
+  background: linear-gradient(135deg, var(--surface-2) 0%, rgba(34,211,238,0.10) 100%);
+  color: var(--text);
+  padding: 0.7rem 1rem;
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 0.875rem;
-  letter-spacing: 0.03em;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-strong);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -271,24 +293,24 @@ body {
 .bs-btn-generate:active:not(:disabled) { transform: translateY(0) scale(0.99); }
 .bs-btn-generate:disabled { opacity: 0.35; cursor: not-allowed; animation: none; }
 
-/* ── Text overrides inside glass cards (Tailwind gray → light) ────────────── */
-.bs-card .text-gray-800, .bs-card .text-gray-900 { color: #f0edd6 !important; }
-.bs-card .text-gray-700  { color: #e0dcc8 !important; }
-.bs-card .text-gray-600  { color: #c8c4b0 !important; }
-.bs-card .text-gray-500  { color: #a8a494 !important; }
-.bs-card .text-gray-400  { color: #888478 !important; }
-.bs-card .bg-gray-50     { background-color: rgba(255,255,255,0.06) !important; }
-.bs-card .bg-white       { background-color: rgba(255,255,255,0.10) !important; }
+/* ── Text overrides inside cards (Tailwind gray → light slate ramp) ───────── */
+.bs-card .text-gray-800, .bs-card .text-gray-900 { color: var(--text) !important; }
+.bs-card .text-gray-700  { color: var(--text-dim) !important; }
+.bs-card .text-gray-600  { color: var(--text-dim) !important; }
+.bs-card .text-gray-500  { color: var(--text-muted) !important; }
+.bs-card .text-gray-400  { color: var(--text-muted) !important; }
+.bs-card .bg-gray-50     { background-color: var(--surface-2) !important; }
+.bs-card .bg-white       { background-color: var(--surface-2) !important; }
 .bs-card .border-gray-100,
-.bs-card .border-gray-200 { border-color: rgba(212,175,55,0.18) !important; }
-.bs-card table thead tr  { background: rgba(4,20,8,0.75) !important; }
-.bs-card tbody tr:hover  { background: rgba(255,255,255,0.06) !important; }
+.bs-card .border-gray-200 { border-color: var(--border) !important; }
+.bs-card table thead tr  { background: var(--surface-2) !important; }
+.bs-card tbody tr:hover  { background: rgba(255,255,255,0.05) !important; }
 .bs-card input, .bs-card select {
-  background: rgba(255,255,255,0.12) !important;
-  color: #f0edd6 !important;
-  border-color: rgba(212,175,55,0.35) !important;
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+  border-color: var(--border-strong) !important;
 }
-.bs-card input::placeholder { color: rgba(240,237,214,0.45) !important; }
+.bs-card input::placeholder { color: var(--text-muted) !important; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MOBILE RESPONSIVE OVERRIDES
@@ -313,6 +335,9 @@ body {
 
   /* Touch-friendly minimum tap target */
   button { min-height: 36px; }
+
+  /* History pill sits under the shorter mobile header */
+  .bs-ribbon-btn { top: 4rem; right: 0.5rem; padding: 6px 10px; }
 }
 
 /* ── Live / In-Progress match styles ─────────────────────────────────────── */
@@ -405,29 +430,26 @@ body {
 /* ── History ribbon & panel ─────────────────────────────────────────────────── */
 .bs-ribbon-btn {
   position: fixed;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  right: 0.75rem;
+  top: 5.5rem;            /* just below the sticky header (desktop) */
   z-index: 30;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 3px;
-  padding: 14px 8px;
-  border-radius: 12px 0 0 12px;
-  border: 1px solid rgba(212,175,55,0.45);
-  border-right: none;
-  background: linear-gradient(180deg, rgba(10,28,14,0.97) 0%, rgba(20,52,26,0.97) 100%);
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(251,191,36,0.45);
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
   backdrop-filter: blur(16px);
-  box-shadow: -4px 0 24px rgba(0,0,0,0.55), inset 1px 0 0 rgba(212,175,55,0.12);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(251,191,36,0.14);
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
-  min-width: 34px;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
 }
 .bs-ribbon-btn:hover {
-  background: linear-gradient(180deg, rgba(16,44,20,0.99) 0%, rgba(30,72,36,0.99) 100%);
-  box-shadow: -6px 0 30px rgba(0,0,0,0.65), 0 0 12px rgba(212,175,55,0.15);
+  background: linear-gradient(135deg, var(--surface-2) 0%, #33455f 100%);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.6), 0 0 12px rgba(251,191,36,0.18);
+  transform: translateY(-1px);
 }
 
 .bs-history-panel {
@@ -439,9 +461,9 @@ body {
   z-index: 40;
   display: flex;
   flex-direction: column;
-  background: rgba(4,14,7,0.98);
-  backdrop-filter: blur(24px) saturate(1.6);
-  border-left: 1px solid rgba(212,175,55,0.35);
+  background: rgba(15,23,42,0.98);
+  backdrop-filter: blur(24px) saturate(1.4);
+  border-left: 1px solid var(--border-strong);
   box-shadow: -8px 0 40px rgba(0,0,0,0.7);
   animation: slideFromRight 0.22s cubic-bezier(0.22,1,0.36,1);
 }
